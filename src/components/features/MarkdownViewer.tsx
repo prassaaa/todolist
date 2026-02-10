@@ -1,7 +1,6 @@
 import ReactMarkdown from 'react-markdown'
 import rehypeHighlight from 'rehype-highlight'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
-import { Card, CardContent } from '@/components/ui/card'
 
 interface MarkdownViewerProps {
   content: string
@@ -17,10 +16,7 @@ export function MarkdownViewer({ content, className = '' }: MarkdownViewerProps)
           [rehypeAutolinkHeadings, { behavior: 'wrap' }],
         ]}
         components={{
-          code({ node, inline, className, children, ...props }: any) {
-            const match = /language-(\w+)/.exec(className || '')
-            const language = match ? match[1] : ''
-
+          code({ className, children, ...props }) {
             return (
               <code className={className} {...props}>
                 {children}
