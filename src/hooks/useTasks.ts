@@ -1,25 +1,37 @@
-import { useQuery, useMutation, useQueryClient, type UseQueryResult } from '@tanstack/react-query"
-import * as api from '@/api/tasks"
-import { CreateTaskInput, UpdateTaskInput, TaskStatus, TaskPriority } from '@/types/task"
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { UseMutationResult, UseQueryResult } from '@tanstack/react-query'
+import * as api from '@/api/tasks'
+import type {
+  CreateTaskInput,
+  Task,
+  TaskPriority,
+  TaskStatus,
+  UpdateTaskInput,
+} from '@/types/task'
 import { toast } from 'sonner'
+
+interface TaskFilters {
+  status?: TaskStatus
+  priority?: TaskPriority
+  tags?: string[]
+  archived?: boolean
+}
+
+type TaskStats = Awaited<ReturnType<typeof api.getTaskStats>>
+type UpdateTaskVariables = { id: string; input: UpdateTaskInput }
 
 // Query keys
 export const taskKeys = {
   all: ['tasks'] as const,
   lists: () => [...taskKeys.all, 'list'] as const,
-  list: (filters: any) => [...taskKeys.lists(), filters] as const,
+  list: (filters?: TaskFilters) => [...taskKeys.lists(), filters] as const,
   details: () => [...taskKeys.all, 'detail'] as const,
   detail: (id: string) => [...taskKeys.details(), id] as const,
   stats: () => [...taskKeys.all, 'stats'] as const,
 }
 
 // Hook to fetch all tasks
-export function useTasks(filters?: {
-  status?: TaskStatus
-  priority?: TaskPriority
-  tags?: string[]
-  archived?: boolean
-}) {
+export function useTasks(filters?: TaskFilters): UseQueryResult<Task[], Error> {
   return useQuery({
     queryKey: taskKeys.list(filters),
     queryFn: () => api.fetchTasks(filters),
@@ -28,7 +40,7 @@ export function useTasks(filters?: {
 }
 
 // Hook to fetch a single task
-export function useTask(id: string) {
+export function useTask(id: string): UseQueryResult<Task, Error> {
   return useQuery({
     queryKey: taskKeys.detail(id),
     queryFn: () => api.fetchTaskById(id),
@@ -37,7 +49,7 @@ export function useTask(id: string) {
 }
 
 // Hook to get task statistics
-export function useTaskStats() {
+export function useTaskStats(): UseQueryResult<TaskStats, Error> {
   return useQuery({
     queryKey: taskKeys.stats(),
     queryFn: api.getTaskStats,
@@ -46,12 +58,12 @@ export function useTaskStats() {
 }
 
 // Hook to create a new task
-export function useCreateTask() {
+export function useCreateTask(): UseMutationResult<Task, Error, CreateTaskInput> {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: (input: CreateTaskInput) => api.createTask(input),
-    onSuccess: (newTask) => {
+    onSuccess: () => {
       // Invalidate the tasks list query
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
       // Invalidate stats
@@ -65,13 +77,13 @@ export function useCreateTask() {
 }
 
 // Hook to update a task
-export function useUpdateTask() {
+export function useUpdateTask(): UseMutationResult<Task, Error, UpdateTaskVariables> {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: UpdateTaskInput }) =>
+    mutationFn: ({ id, input }: UpdateTaskVariables) =>
       api.updateTask(id, input),
-    onSuccess: (updatedTask) => {
+    onSuccess: (updatedTask: Task) => {
       // Invalidate the tasks list query
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
       // Invalidate the specific task detail query
@@ -87,7 +99,7 @@ export function useUpdateTask() {
 }
 
 // Hook to delete a task
-export function useDeleteTask() {
+export function useDeleteTask(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -106,7 +118,7 @@ export function useDeleteTask() {
 }
 
 // Hook to archive a task
-export function useArchiveTask() {
+export function useArchiveTask(): UseMutationResult<Task, Error, string> {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -125,7 +137,7 @@ export function useArchiveTask() {
 }
 
 // Hook to unarchive a task
-export function useUnarchiveTask() {
+export function useUnarchiveTask(): UseMutationResult<Task, Error, string> {
   const queryClient = useQueryClient()
 
   return useMutation({
