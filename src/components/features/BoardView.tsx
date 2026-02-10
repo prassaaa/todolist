@@ -20,6 +20,7 @@ interface BoardViewProps {
   tasks: Task[]
   isLoading?: boolean
   onTaskClick?: (task: Task) => void
+  onDropTask?: (taskId: string, newStatus: TaskStatus) => void
 }
 
 const COLUMNS: TaskStatus[] = ['todo', 'in_progress', 'code_review', 'done']
@@ -59,7 +60,7 @@ function SortableTaskCard({ task, onClick }: { task: Task; onClick?: () => void 
   )
 }
 
-export function BoardView({ tasks, isLoading, onTaskClick }: BoardViewProps) {
+export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardViewProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -113,15 +114,42 @@ export function BoardView({ tasks, isLoading, onTaskClick }: BoardViewProps) {
     const { active, over } = event
     setActiveTask(null)
 
-    if (!over || active.id === over.id) return
+    if (!over) return
+
+    const activeId = active.id
+    const overId = over.id
 
     // Find the task being dragged
-    const draggedTask = tasks.find((t) => t.id === active.id)
+    const draggedTask = tasks.find((t) => t.id === activeId)
     if (!draggedTask) return
 
-    // Update the task status
-    // Note: In a real app, you'd call the update mutation here
-    // For now, this is just a UI demonstration
+    // If dropped on same task, do nothing
+    if (activeId === overId) return
+
+    // If dropped on another task in the same column, reorder within column
+    const droppedOnTask = tasks.find((t) => t.id === overId)
+    if (droppedOnTask && droppedOnTask.status === draggedTask.status) {
+      // Reordering within same column - for now, just ignore
+      // In a real app, you'd implement reordering here
+      return
+    }
+
+    // Determine new status based on the column it was dropped into
+    // overId can be either a task ID or a column ID
+    let newStatus: TaskStatus | null = null
+
+    // Check if overId matches any column
+    if (COLUMNS.includes(overId as TaskStatus)) {
+      newStatus = overId as TaskStatus
+    } else if (droppedOnTask) {
+      // Dropped on a task - use that task's status
+      newStatus = droppedOnTask.status
+    }
+
+    // Only update if status changed
+    if (newStatus && newStatus !== draggedTask.status) {
+      onDropTask?.(draggedTask.id, newStatus)
+    }
   }
 
   if (isLoading) {

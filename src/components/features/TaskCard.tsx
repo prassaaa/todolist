@@ -4,7 +4,9 @@ import { StatusBadge } from "./StatusBadge"
 import { PriorityIcon } from "./PriorityIcon"
 import { Task } from "@/types/task"
 import { formatDistanceToNow } from "date-fns"
-import { Calendar, Tag } from "lucide-react"
+import { Calendar, Tag, ChevronDown, ChevronUp } from "lucide-react"
+import { MarkdownViewer } from "./MarkdownViewer"
+import { useState } from "react"
 
 interface TaskCardProps {
   task: Task
@@ -12,6 +14,8 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, onClick }: TaskCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false)
+
   const tagColors: Record<string, string> = {
     bug: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
     feature: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
@@ -40,9 +44,32 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       
       {task.description && (
         <CardContent className="pb-3">
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {task.description}
-          </p>
+          {!isExpanded ? (
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {task.description}
+            </p>
+          ) : (
+            <MarkdownViewer content={task.description} />
+          )}
+          {task.description.length > 100 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsExpanded(!isExpanded)
+              }}
+              className="mt-2 text-xs text-primary hover:underline flex items-center gap-1"
+            >
+              {isExpanded ? (
+                <>
+                  Show less <ChevronUp className="w-3 h-3" />
+                </>
+              ) : (
+                <>
+                  Show more <ChevronDown className="w-3 h-3" />
+                </>
+              )}
+            </button>
+          )}
         </CardContent>
       )}
 
