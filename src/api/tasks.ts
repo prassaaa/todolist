@@ -82,7 +82,7 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
 
 // Update an existing task
 export async function updateTask(id: string, input: UpdateTaskInput): Promise<Task> {
-  const updateData: any = {}
+  const updateData: UpdateTaskInput = {}
 
   if (input.title !== undefined) updateData.title = input.title
   if (input.description !== undefined) updateData.description = input.description
