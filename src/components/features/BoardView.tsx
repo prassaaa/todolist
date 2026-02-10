@@ -12,7 +12,7 @@ import {
   useSensors,
 } from '@dnd-kit/core'
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
-import { SortableContext, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useMemo, useState } from 'react'
 
@@ -30,6 +30,23 @@ const COLUMN_CONFIG = {
   in_progress: { title: 'In Progress', count: 0 },
   code_review: { title: 'Code Review', count: 0 },
   done: { title: 'Done', count: 0 },
+}
+
+function createEmptyColumns<T>(): Record<TaskStatus, T[]> {
+  return {
+    todo: [],
+    in_progress: [],
+    code_review: [],
+    done: [],
+  }
+}
+
+function buildColumnOrder(tasks: Task[]): Record<TaskStatus, string[]> {
+  const grouped = createEmptyColumns<string>()
+  tasks.forEach((task) => {
+    grouped[task.status].push(task.id)
+  })
+  return grouped
 }
 
 function SortableTaskCard({ task, onClick }: { task: Task; onClick?: () => void }) {
@@ -66,6 +83,9 @@ function isTaskStatus(value: string): value is TaskStatus {
 
 export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardViewProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
+  const [columnOrder, setColumnOrder] = useState<Record<TaskStatus, string[]>>(() =>
+    buildColumnOrder(tasks)
+  )
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -79,17 +99,30 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
   )
 
   const tasksByColumn = useMemo(() => {
-    const grouped: Record<TaskStatus, Task[]> = {
-      todo: [],
-      in_progress: [],
-      code_review: [],
-      done: [],
-    }
-    tasks.forEach((task) => {
-      grouped[task.status].push(task)
+    const grouped = createEmptyColumns<Task>()
+    const taskMap = new Map(tasks.map((task) => [task.id, task]))
+
+    COLUMNS.forEach((column) => {
+      const orderedIds = columnOrder[column]
+      const seenIds = new Set<string>()
+
+      orderedIds.forEach((id) => {
+        const task = taskMap.get(id)
+        if (task && task.status === column) {
+          grouped[column].push(task)
+          seenIds.add(id)
+        }
+      })
+
+      tasks.forEach((task) => {
+        if (task.status === column && !seenIds.has(task.id)) {
+          grouped[column].push(task)
+        }
+      })
     })
+
     return grouped
-  }, [tasks])
+  }, [columnOrder, tasks])
 
   const handleDragStart = (event: DragStartEvent) => {
     const activeId = String(event.active.id)
@@ -116,8 +149,22 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
     // If dropped on another task in the same column, reorder within column
     const droppedOnTask = tasks.find((t) => t.id === overId)
     if (droppedOnTask && droppedOnTask.status === draggedTask.status) {
-      // Reordering within same column - for now, just ignore
-      // In a real app, you'd implement reordering here
+      const column = draggedTask.status
+      const currentColumnIds = tasksByColumn[column].map((task) => task.id)
+      const oldIndex = currentColumnIds.indexOf(activeId)
+      const newIndex = currentColumnIds.indexOf(overId)
+
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+        return
+      }
+
+      const reorderedIds = arrayMove(currentColumnIds, oldIndex, newIndex)
+      setColumnOrder((prev) => {
+        return {
+          ...prev,
+          [column]: reorderedIds,
+        }
+      })
       return
     }
 
