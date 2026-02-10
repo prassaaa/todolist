@@ -1,4 +1,4 @@
-import { Task, TaskStatus } from '@/types/task'
+import type { Task, TaskStatus } from '@/types/task'
 import { TaskCard } from './TaskCard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -10,11 +10,11 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
 } from '@dnd-kit/core'
-import { SortableContext, arrayMove, useSortable } from '@dnd-kit/sortable'
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
+import { SortableContext, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 interface BoardViewProps {
   tasks: Task[]
@@ -60,7 +60,13 @@ function SortableTaskCard({ task, onClick }: { task: Task; onClick?: () => void 
   )
 }
 
+function isTaskStatus(value: string): value is TaskStatus {
+  return COLUMNS.includes(value as TaskStatus)
+}
+
 export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardViewProps) {
+  const [activeTask, setActiveTask] = useState<Task | null>(null)
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -68,30 +74,7 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
       },
     }),
     useSensor(KeyboardSensor, {
-      coordinateGetter: (event, { context }) => {
-        const {
-          current: { draggableNodeIds },
-        } = context
-        const key = (event as KeyboardEvent).key
-        const options = {
-          event,
-          context,
-          activeId: null,
-          overId: null,
-        }
-
-        if (key === 'ArrowDown' || key === 'ArrowRight') {
-          const activeId = draggableNodeIds?.[0]
-          options.activeId = activeId
-          options.overId = draggableNodeIds?.[draggableNodeIds.indexOf(activeId!) + 1]
-        } else if (key === 'ArrowUp' || key === 'ArrowLeft') {
-          const activeId = draggableNodeIds?.[0]
-          options.activeId = activeId
-          options.overId = draggableNodeIds?.[draggableNodeIds.indexOf(activeId!) - 1]
-        }
-
-        return closestCorners(options)
-      },
+      coordinateGetter: sortableKeyboardCoordinates,
     })
   )
 
@@ -108,16 +91,20 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
     return grouped
   }, [tasks])
 
-  const [activeTask, setActiveTask] = useMemo(() => [null, null] as [Task | null, any], [])
+  const handleDragStart = (event: DragStartEvent) => {
+    const activeId = String(event.active.id)
+    const draggedTask = tasks.find((t) => t.id === activeId) ?? null
+    setActiveTask(draggedTask)
+  }
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     setActiveTask(null)
 
     if (!over) return
 
-    const activeId = active.id
-    const overId = over.id
+    const activeId = String(active.id)
+    const overId = String(over.id)
 
     // Find the task being dragged
     const draggedTask = tasks.find((t) => t.id === activeId)
@@ -139,8 +126,8 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
     let newStatus: TaskStatus | null = null
 
     // Check if overId matches any column
-    if (COLUMNS.includes(overId as TaskStatus)) {
-      newStatus = overId as TaskStatus
+    if (isTaskStatus(overId)) {
+      newStatus = overId
     } else if (droppedOnTask) {
       // Dropped on a task - use that task's status
       newStatus = droppedOnTask.status
@@ -175,6 +162,7 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
     <DndContext
       sensors={sensors}
       collisionDetection={closestCorners}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
