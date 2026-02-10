@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import { Task, TaskStatus, TaskPriority, ViewMode } from '@/types/task'
+import type { Task, TaskStatus, TaskPriority, ViewMode } from '@/types/task'
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useArchiveTask, useTaskStats } from '@/hooks/useTasks'
-import { TaskForm, TaskFormValues } from './features/TaskForm'
+import { TaskForm } from './features/TaskForm'
+import type { TaskFormValues } from './features/TaskForm'
 import { BoardView } from './features/BoardView'
 import { ListView } from './features/ListView'
 import { QuickAdd } from './features/QuickAdd'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { LayoutGrid, List, Filter, Plus } from 'lucide-react'
+import { LayoutGrid, List, Plus } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export function Dashboard() {
