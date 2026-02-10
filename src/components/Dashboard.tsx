@@ -68,6 +68,13 @@ export function Dashboard() {
     createMutation.mutate(values)
   }
 
+  const handleDropTask = (taskId: string, newStatus: TaskStatus) => {
+    updateMutation.mutate({
+      id: taskId,
+      input: { status: newStatus },
+    })
+  }
+
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
@@ -227,6 +234,7 @@ export function Dashboard() {
           tasks={tasks}
           isLoading={isLoading}
           onTaskClick={handleTaskClick}
+          onDropTask={handleDropTask}
         />
       )}
 
