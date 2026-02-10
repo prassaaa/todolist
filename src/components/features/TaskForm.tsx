@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import {
@@ -21,8 +21,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { X, Plus } from 'lucide-react'
-import { TaskStatus, TaskPriority } from '@/types/task'
+import { X } from 'lucide-react'
+import type { TaskStatus, TaskPriority } from '@/types/task'
 
 const taskFormSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
@@ -32,7 +32,8 @@ const taskFormSchema = z.object({
   tags: z.array(z.string()).default([]),
 })
 
-export type TaskFormValues = z.infer<typeof taskFormSchema>
+type TaskFormInput = z.input<typeof taskFormSchema>
+export type TaskFormValues = z.output<typeof taskFormSchema>
 
 interface TaskFormProps {
   open: boolean
@@ -47,7 +48,7 @@ const availableTags = [
 ]
 
 export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoading }: TaskFormProps) {
-  const form = useForm<TaskFormValues>({
+  const form = useForm<TaskFormInput, undefined, TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
     defaultValues: {
       title: '',
@@ -59,10 +60,13 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
     },
   })
 
-  const selectedTags = form.watch('tags')
+  const selectedTags = useWatch({
+    control: form.control,
+    name: 'tags',
+  }) ?? []
 
   const toggleTag = (tag: string) => {
-    const currentTags = form.getValues('tags') || []
+    const currentTags = form.getValues('tags') ?? []
     const newTags = currentTags.includes(tag)
       ? currentTags.filter((t) => t !== tag)
       : [...currentTags, tag]
