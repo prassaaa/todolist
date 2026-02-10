@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase"
-import { Task, CreateTaskInput, UpdateTaskInput, TaskStatus, TaskPriority } from "@/types/task"
+import type { Task, CreateTaskInput, UpdateTaskInput, TaskStatus, TaskPriority } from "@/types/task"
 
 // Get all tasks (non-archived by default)
 export async function fetchTasks(filters?: {

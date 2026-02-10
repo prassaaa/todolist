@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Plus } from 'lucide-react'
-import { TaskFormValues } from './TaskForm'
+import type { TaskFormValues } from './TaskForm'
 
 interface QuickAddProps {
   onAdd: (values: TaskFormValues) => void

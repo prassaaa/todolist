@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, Clock, Code2, Circle } from "lucide-react"
-import { TaskStatus } from "@/types/task"
+import type { TaskStatus } from "@/types/task"
 
 interface StatusBadgeProps {
   status: TaskStatus

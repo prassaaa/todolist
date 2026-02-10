@@ -1,4 +1,4 @@
-import { Task } from '@/types/task'
+import type { Task } from '@/types/task'
 import {
   Table,
   TableBody,
@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { TaskCard } from './TaskCard'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface ListViewProps {
   tasks: Task[]
