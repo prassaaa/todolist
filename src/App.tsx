@@ -1,14 +1,47 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Moon, Sun } from 'lucide-react'
 import { Dashboard } from './components/Dashboard'
 
 function App() {
-  const [isDark, setIsDark] = useState(true)
+  const [isDark, setIsDark] = useState(() => {
+    // Check localStorage first, then fallback to system preference
+    const savedTheme = localStorage.getItem('theme')
+    if (savedTheme !== null) {
+      return savedTheme === 'dark'
+    }
+    // Use system preference if no saved theme
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
 
   const toggleTheme = () => {
     setIsDark(!isDark)
-    document.documentElement.classList.toggle('dark')
   }
+
+  // Apply theme to DOM and save to localStorage
+  useEffect(() => {
+    const root = document.documentElement
+    if (isDark) {
+      root.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      root.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+    }
+  }, [isDark])
+
+  // Listen to system theme changes
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleChange = (e: MediaQueryListEvent) => {
+      // Only update if user hasn't set a preference
+      if (localStorage.getItem('theme') === null) {
+        setIsDark(e.matches)
+      }
+    }
+
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
 
   return (
     <div className={`min-h-screen transition-colors duration-200 ${isDark ? 'dark' : ''}`}>
