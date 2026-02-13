@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { LayoutGrid, List, Plus } from 'lucide-react'
+import { LayoutGrid, List, Plus, ListChecks, Circle, Clock, Code2, CheckCircle2, Archive, TrendingUp } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export function Dashboard() {
@@ -95,75 +95,117 @@ export function Dashboard() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {stats ? (
           <>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.total}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  To Do
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.todo}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  In Progress
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.inProgress}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Code Review
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.codeReview}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Done
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.done}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Archived
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stats.archived}</div>
-              </CardContent>
-            </Card>
+            {[
+              {
+                label: 'Total',
+                value: stats.total,
+                icon: ListChecks,
+                iconBg: 'bg-gradient-to-br from-violet-500 to-purple-600',
+                accentBorder: 'border-l-violet-500',
+                textColor: 'text-violet-600 dark:text-violet-400',
+              },
+              {
+                label: 'To Do',
+                value: stats.todo,
+                icon: Circle,
+                iconBg: 'bg-gradient-to-br from-slate-400 to-slate-500',
+                accentBorder: 'border-l-slate-400',
+                textColor: 'text-slate-600 dark:text-slate-400',
+              },
+              {
+                label: 'In Progress',
+                value: stats.inProgress,
+                icon: Clock,
+                iconBg: 'bg-gradient-to-br from-blue-500 to-cyan-500',
+                accentBorder: 'border-l-blue-500',
+                textColor: 'text-blue-600 dark:text-blue-400',
+              },
+              {
+                label: 'Code Review',
+                value: stats.codeReview,
+                icon: Code2,
+                iconBg: 'bg-gradient-to-br from-amber-500 to-orange-500',
+                accentBorder: 'border-l-amber-500',
+                textColor: 'text-amber-600 dark:text-amber-400',
+              },
+              {
+                label: 'Done',
+                value: stats.done,
+                icon: CheckCircle2,
+                iconBg: 'bg-gradient-to-br from-emerald-500 to-green-600',
+                accentBorder: 'border-l-emerald-500',
+                textColor: 'text-emerald-600 dark:text-emerald-400',
+              },
+              {
+                label: 'Archived',
+                value: stats.archived,
+                icon: Archive,
+                iconBg: 'bg-gradient-to-br from-rose-400 to-pink-500',
+                accentBorder: 'border-l-rose-400',
+                textColor: 'text-rose-500 dark:text-rose-400',
+              },
+            ].map((item) => {
+              const Icon = item.icon
+              const percentage = stats.total > 0 ? Math.round((item.value / stats.total) * 100) : 0
+              return (
+                <Card
+                  key={item.label}
+                  className={`relative overflow-hidden border-l-4 ${item.accentBorder} hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group`}
+                >
+                  <CardHeader className="pb-1 pt-4 px-4">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        {item.label}
+                      </CardTitle>
+                      <div className={`${item.iconBg} p-1.5 rounded-lg shadow-sm group-hover:scale-110 transition-transform duration-300`}>
+                        <Icon className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4 pt-0">
+                    <div className="flex items-end gap-2">
+                      <span className={`text-3xl font-extrabold tracking-tight ${item.textColor}`}>
+                        {item.value}
+                      </span>
+                      {item.label !== 'Total' && stats.total > 0 && (
+                        <span className="text-xs font-medium text-muted-foreground mb-1.5">
+                          {percentage}%
+                        </span>
+                      )}
+                    </div>
+                    {/* Mini progress bar */}
+                    {item.label !== 'Total' && (
+                      <div className="mt-2.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${item.iconBg} transition-all duration-700 ease-out`}
+                          style={{ width: `${stats.total > 0 ? Math.max((item.value / stats.total) * 100, item.value > 0 ? 4 : 0) : 0}%` }}
+                        />
+                      </div>
+                    )}
+                    {/* Total card shows a summary line instead */}
+                    {item.label === 'Total' && (
+                      <div className="mt-2.5 flex items-center gap-1 text-xs text-muted-foreground">
+                        <TrendingUp className="w-3 h-3" />
+                        <span>{stats.done} completed</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )
+            })}
           </>
         ) : (
           Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader className="pb-2">
-                <Skeleton className="h-4 w-20" />
+            <Card key={i} className="border-l-4 border-l-muted">
+              <CardHeader className="pb-1 pt-4 px-4">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-7 w-7 rounded-lg" />
+                </div>
               </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-12" />
+              <CardContent className="px-4 pb-4 pt-0">
+                <Skeleton className="h-9 w-14 mt-1" />
+                <Skeleton className="h-1.5 w-full rounded-full mt-3" />
               </CardContent>
             </Card>
           ))
