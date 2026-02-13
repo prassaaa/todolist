@@ -10,11 +10,12 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable,
 } from '@dnd-kit/core'
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 interface BoardViewProps {
   tasks: Task[]
@@ -39,14 +40,6 @@ function createEmptyColumns<T>(): Record<TaskStatus, T[]> {
     code_review: [],
     done: [],
   }
-}
-
-function buildColumnOrder(tasks: Task[]): Record<TaskStatus, string[]> {
-  const grouped = createEmptyColumns<string>()
-  tasks.forEach((task) => {
-    grouped[task.status].push(task.id)
-  })
-  return grouped
 }
 
 function SortableTaskCard({ task, onClick }: { task: Task; onClick?: () => void }) {
@@ -81,11 +74,25 @@ function isTaskStatus(value: string): value is TaskStatus {
   return COLUMNS.includes(value as TaskStatus)
 }
 
+function DroppableColumn({ id, children }: { id: TaskStatus; children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id })
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`space-y-3 min-h-[100px] rounded-lg transition-colors ${
+        isOver ? 'bg-primary/5 ring-2 ring-primary/20' : ''
+      }`}
+    >
+      {children}
+    </div>
+  )
+}
+
 export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardViewProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
-  const [columnOrder, setColumnOrder] = useState<Record<TaskStatus, string[]>>(() =>
-    buildColumnOrder(tasks)
-  )
+  // Only stores manual reorder overrides per column, not full state
+  const [localReorder, setLocalReorder] = useState<Record<string, string[]>>({})
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -100,29 +107,42 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
 
   const tasksByColumn = useMemo(() => {
     const grouped = createEmptyColumns<Task>()
-    const taskMap = new Map(tasks.map((task) => [task.id, task]))
 
+    // First, group all tasks by their status
+    tasks.forEach((task) => {
+      grouped[task.status].push(task)
+    })
+
+    // Then apply any local reorder overrides
     COLUMNS.forEach((column) => {
-      const orderedIds = columnOrder[column]
-      const seenIds = new Set<string>()
+      const reorderIds = localReorder[column]
+      if (reorderIds) {
+        const taskMap = new Map(grouped[column].map((t) => [t.id, t]))
+        const reordered: Task[] = []
+        const seen = new Set<string>()
 
-      orderedIds.forEach((id) => {
-        const task = taskMap.get(id)
-        if (task && task.status === column) {
-          grouped[column].push(task)
-          seenIds.add(id)
-        }
-      })
+        // Place tasks in the reorder order
+        reorderIds.forEach((id) => {
+          const task = taskMap.get(id)
+          if (task) {
+            reordered.push(task)
+            seen.add(id)
+          }
+        })
 
-      tasks.forEach((task) => {
-        if (task.status === column && !seenIds.has(task.id)) {
-          grouped[column].push(task)
-        }
-      })
+        // Append any new tasks not in the reorder list
+        grouped[column].forEach((task) => {
+          if (!seen.has(task.id)) {
+            reordered.push(task)
+          }
+        })
+
+        grouped[column] = reordered
+      }
     })
 
     return grouped
-  }, [columnOrder, tasks])
+  }, [tasks, localReorder])
 
   const handleDragStart = (event: DragStartEvent) => {
     const activeId = String(event.active.id)
@@ -130,7 +150,7 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
     setActiveTask(draggedTask)
   }
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event
     setActiveTask(null)
 
@@ -159,32 +179,35 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
       }
 
       const reorderedIds = arrayMove(currentColumnIds, oldIndex, newIndex)
-      setColumnOrder((prev) => {
-        return {
-          ...prev,
-          [column]: reorderedIds,
-        }
-      })
+      setLocalReorder((prev) => ({
+        ...prev,
+        [column]: reorderedIds,
+      }))
       return
     }
 
     // Determine new status based on the column it was dropped into
-    // overId can be either a task ID or a column ID
     let newStatus: TaskStatus | null = null
 
-    // Check if overId matches any column
     if (isTaskStatus(overId)) {
       newStatus = overId
     } else if (droppedOnTask) {
-      // Dropped on a task - use that task's status
       newStatus = droppedOnTask.status
     }
 
     // Only update if status changed
     if (newStatus && newStatus !== draggedTask.status) {
+      const targetStatus = newStatus
+      // Clear reorder for the old column since task is moving out
+      setLocalReorder((prev) => {
+        const updated = { ...prev }
+        delete updated[draggedTask.status]
+        delete updated[targetStatus]
+        return updated
+      })
       onDropTask?.(draggedTask.id, newStatus)
     }
-  }
+  }, [tasks, tasksByColumn, onDropTask])
 
   if (isLoading) {
     return (
@@ -227,21 +250,23 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
                   </span>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <SortableContext items={columnTasks.map((t) => t.id)}>
-                  {columnTasks.map((task) => (
-                    <SortableTaskCard
-                      key={task.id}
-                      task={task}
-                      onClick={() => onTaskClick?.(task)}
-                    />
-                  ))}
-                </SortableContext>
-                {columnTasks.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground text-sm">
-                    No tasks
-                  </div>
-                )}
+              <CardContent>
+                <DroppableColumn id={column}>
+                  <SortableContext items={columnTasks.map((t) => t.id)}>
+                    {columnTasks.map((task) => (
+                      <SortableTaskCard
+                        key={task.id}
+                        task={task}
+                        onClick={() => onTaskClick?.(task)}
+                      />
+                    ))}
+                  </SortableContext>
+                  {columnTasks.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground text-sm">
+                      No tasks
+                    </div>
+                  )}
+                </DroppableColumn>
               </CardContent>
             </Card>
           )

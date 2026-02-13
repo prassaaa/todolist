@@ -1,4 +1,5 @@
 import { useForm, useWatch } from 'react-hook-form'
+import { useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import {
@@ -59,6 +60,20 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
       ...initialValues,
     },
   })
+
+  // Reset form when dialog opens or initialValues change (switch between create/edit)
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        title: '',
+        description: '',
+        status: 'todo',
+        priority: 'medium',
+        tags: [],
+        ...initialValues,
+      })
+    }
+  }, [open, initialValues, form])
 
   const selectedTags = useWatch({
     control: form.control,
