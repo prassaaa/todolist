@@ -8,6 +8,14 @@ import { ListView } from './features/ListView'
 import { QuickAdd } from './features/QuickAdd'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { LayoutGrid, List, Plus } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -17,6 +25,7 @@ export function Dashboard() {
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [filterStatus, setFilterStatus] = useState<TaskStatus | 'all'>('all')
   const [filterPriority, setFilterPriority] = useState<TaskPriority | 'all'>('all')
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
   // Fetch tasks
   const { data: tasks = [], isLoading } = useTasks({
@@ -50,8 +59,13 @@ export function Dashboard() {
   }
 
   const handleDeleteTask = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this task?')) {
-      deleteMutation.mutate(id)
+    setDeleteConfirmId(id)
+  }
+
+  const confirmDelete = () => {
+    if (deleteConfirmId) {
+      deleteMutation.mutate(deleteConfirmId)
+      setDeleteConfirmId(null)
     }
   }
 
@@ -246,6 +260,26 @@ export function Dashboard() {
         initialValues={editingTask || undefined}
         isLoading={createMutation.isPending || updateMutation.isPending}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Delete Task</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this task? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={deleteMutation.isPending}>
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
