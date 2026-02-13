@@ -4,44 +4,46 @@ import { Dashboard } from './components/Dashboard'
 
 function App() {
   const [isDark, setIsDark] = useState(() => {
-    // Check localStorage first, then fallback to system preference
     const savedTheme = localStorage.getItem('theme')
     if (savedTheme !== null) {
       return savedTheme === 'dark'
     }
-    // Use system preference if no saved theme
     return window.matchMedia('(prefers-color-scheme: dark)').matches
   })
+  const [hasUserPreference, setHasUserPreference] = useState(
+    () => localStorage.getItem('theme') !== null
+  )
 
   const toggleTheme = () => {
     setIsDark(!isDark)
+    setHasUserPreference(true)
   }
 
-  // Apply theme to DOM and save to localStorage
+  // Apply theme to DOM and save to localStorage only if user has set a preference
   useEffect(() => {
     const root = document.documentElement
     if (isDark) {
       root.classList.add('dark')
-      localStorage.setItem('theme', 'dark')
     } else {
       root.classList.remove('dark')
-      localStorage.setItem('theme', 'light')
     }
-  }, [isDark])
+    if (hasUserPreference) {
+      localStorage.setItem('theme', isDark ? 'dark' : 'light')
+    }
+  }, [isDark, hasUserPreference])
 
-  // Listen to system theme changes
+  // Listen to system theme changes when user hasn't set a preference
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     const handleChange = (e: MediaQueryListEvent) => {
-      // Only update if user hasn't set a preference
-      if (localStorage.getItem('theme') === null) {
+      if (!hasUserPreference) {
         setIsDark(e.matches)
       }
     }
 
     mediaQuery.addEventListener('change', handleChange)
     return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [])
+  }, [hasUserPreference])
 
   return (
     <div className={`min-h-screen transition-colors duration-500 ease-in-out ${isDark ? 'dark' : ''}`}>
