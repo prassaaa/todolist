@@ -50,11 +50,18 @@ function SortableTaskCard({ task, onClick }: { task: Task; onClick?: () => void 
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id })
+  } = useSortable({
+    id: task.id,
+    transition: {
+      duration: 250,
+      easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+    },
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.4 : 1,
   }
 
   return (
@@ -63,7 +70,7 @@ function SortableTaskCard({ task, onClick }: { task: Task; onClick?: () => void 
       style={style}
       {...attributes}
       {...listeners}
-      className={`touch-none ${isDragging ? 'opacity-50' : ''}`}
+      className="touch-none transition-opacity duration-200"
     >
       <TaskCard task={task} onClick={onClick} />
     </div>
@@ -91,6 +98,8 @@ function DroppableColumn({ id, children }: { id: TaskStatus; children: React.Rea
 
 export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardViewProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
+  // Optimistic overrides: taskId -> newStatus (applied instantly on drop, before server responds)
+  const [optimisticMoves, setOptimisticMoves] = useState<Record<string, TaskStatus>>({})
   // Only stores manual reorder overrides per column, not full state
   const [localReorder, setLocalReorder] = useState<Record<string, string[]>>({})
 
@@ -105,11 +114,36 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
     })
   )
 
+  // Merge server tasks with optimistic moves so cards appear in the new column instantly
+  // Also clean up moves that the server has already caught up with
+  const cleanOptimisticMoves = useMemo(() => {
+    if (Object.keys(optimisticMoves).length === 0) return optimisticMoves
+    const serverMap = new Map(tasks.map((t) => [t.id, t.status]))
+    const stillPending: Record<string, TaskStatus> = {}
+    for (const [id, targetStatus] of Object.entries(optimisticMoves)) {
+      if (serverMap.get(id) !== targetStatus) {
+        stillPending[id] = targetStatus
+      }
+    }
+    return stillPending
+  }, [tasks, optimisticMoves])
+
+  const effectiveTasks = useMemo(() => {
+    if (Object.keys(cleanOptimisticMoves).length === 0) return tasks
+    return tasks.map((task) => {
+      const override = cleanOptimisticMoves[task.id]
+      if (override && override !== task.status) {
+        return { ...task, status: override }
+      }
+      return task
+    })
+  }, [tasks, cleanOptimisticMoves])
+
   const tasksByColumn = useMemo(() => {
     const grouped = createEmptyColumns<Task>()
 
-    // First, group all tasks by their status
-    tasks.forEach((task) => {
+    // First, group all tasks by their status (using effective/optimistic status)
+    effectiveTasks.forEach((task) => {
       grouped[task.status].push(task)
     })
 
@@ -142,32 +176,40 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
     })
 
     return grouped
-  }, [tasks, localReorder])
+  }, [effectiveTasks, localReorder])
 
   const handleDragStart = (event: DragStartEvent) => {
     const activeId = String(event.active.id)
-    const draggedTask = tasks.find((t) => t.id === activeId) ?? null
+    const draggedTask = effectiveTasks.find((t) => t.id === activeId) ?? null
     setActiveTask(draggedTask)
   }
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event
-    setActiveTask(null)
 
-    if (!over) return
+    if (!over) {
+      setActiveTask(null)
+      return
+    }
 
     const activeId = String(active.id)
     const overId = String(over.id)
 
     // Find the task being dragged
-    const draggedTask = tasks.find((t) => t.id === activeId)
-    if (!draggedTask) return
+    const draggedTask = effectiveTasks.find((t) => t.id === activeId)
+    if (!draggedTask) {
+      setActiveTask(null)
+      return
+    }
 
     // If dropped on same task, do nothing
-    if (activeId === overId) return
+    if (activeId === overId) {
+      setActiveTask(null)
+      return
+    }
 
     // If dropped on another task in the same column, reorder within column
-    const droppedOnTask = tasks.find((t) => t.id === overId)
+    const droppedOnTask = effectiveTasks.find((t) => t.id === overId)
     if (droppedOnTask && droppedOnTask.status === draggedTask.status) {
       const column = draggedTask.status
       const currentColumnIds = tasksByColumn[column].map((task) => task.id)
@@ -175,6 +217,7 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
       const newIndex = currentColumnIds.indexOf(overId)
 
       if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+        setActiveTask(null)
         return
       }
 
@@ -183,6 +226,7 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
         ...prev,
         [column]: reorderedIds,
       }))
+      setActiveTask(null)
       return
     }
 
@@ -198,7 +242,9 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
     // Only update if status changed
     if (newStatus && newStatus !== draggedTask.status) {
       const targetStatus = newStatus
-      // Clear reorder for the old column since task is moving out
+      // Apply optimistic move immediately so card appears in new column
+      setOptimisticMoves((prev) => ({ ...prev, [draggedTask.id]: targetStatus }))
+      // Clear reorder for affected columns
       setLocalReorder((prev) => {
         const updated = { ...prev }
         delete updated[draggedTask.status]
@@ -207,7 +253,10 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
       })
       onDropTask?.(draggedTask.id, newStatus)
     }
-  }, [tasks, tasksByColumn, onDropTask])
+
+    // Clear active task after processing so overlay stays visible until card is placed
+    setActiveTask(null)
+  }, [effectiveTasks, tasksByColumn, onDropTask])
 
   if (isLoading) {
     return (
@@ -273,9 +322,12 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
         })}
       </div>
 
-      <DragOverlay>
+      <DragOverlay dropAnimation={{
+        duration: 250,
+        easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+      }}>
         {activeTask && (
-          <div className="rotate-3 opacity-90">
+          <div className="rotate-2 scale-105 shadow-xl opacity-95">
             <TaskCard task={activeTask} />
           </div>
         )}
