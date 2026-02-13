@@ -83,17 +83,46 @@ export function useUpdateTask(): UseMutationResult<Task, Error, UpdateTaskVariab
   return useMutation({
     mutationFn: ({ id, input }: UpdateTaskVariables) =>
       api.updateTask(id, input),
+
+    // Optimistic update: immediately move the task in the cache before server responds
+    onMutate: async ({ id, input }) => {
+      // Cancel any outgoing refetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: taskKeys.lists() })
+      await queryClient.cancelQueries({ queryKey: taskKeys.stats() })
+
+      // Snapshot the previous value
+      const previousQueries = queryClient.getQueriesData<Task[]>({ queryKey: taskKeys.lists() })
+
+      // Optimistically update all matching task list caches
+      queryClient.setQueriesData<Task[]>(
+        { queryKey: taskKeys.lists() },
+        (old) => {
+          if (!old) return old
+          return old.map((task) =>
+            task.id === id ? { ...task, ...input } : task
+          )
+        }
+      )
+
+      return { previousQueries }
+    },
+
+    onError: (_error, _variables, context) => {
+      // Rollback to previous value on error
+      if (context?.previousQueries) {
+        context.previousQueries.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data)
+        })
+      }
+      toast.error(`Failed to update task: ${_error.message}`)
+    },
+
     onSuccess: (updatedTask: Task) => {
-      // Invalidate the tasks list query
+      // Invalidate to get the real server state
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
-      // Invalidate the specific task detail query
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(updatedTask.id) })
-      // Invalidate stats
       queryClient.invalidateQueries({ queryKey: taskKeys.stats() })
       toast.success('Task updated successfully')
-    },
-    onError: (error: Error) => {
-      toast.error(`Failed to update task: ${error.message}`)
     },
   })
 }
