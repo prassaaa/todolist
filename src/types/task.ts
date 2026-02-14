@@ -10,6 +10,7 @@ export interface Task {
   tags: string[];
   created_at: string;
   is_archived: boolean;
+  image_url?: string;
 }
 
 export interface CreateTaskInput {
@@ -18,6 +19,7 @@ export interface CreateTaskInput {
   status?: TaskStatus;
   priority?: TaskPriority;
   tags?: string[];
+  image_url?: string;
 }
 
 export interface UpdateTaskInput {
@@ -27,6 +29,7 @@ export interface UpdateTaskInput {
   priority?: TaskPriority;
   tags?: string[];
   is_archived?: boolean;
+  image_url?: string;
 }
 
 export type ViewMode = 'list' | 'board';
