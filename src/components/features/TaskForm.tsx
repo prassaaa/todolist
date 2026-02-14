@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { X } from 'lucide-react'
+import { ImageUpload } from './ImageUpload'
 import type { TaskStatus, TaskPriority } from '@/types/task'
 
 const taskFormSchema = z.object({
@@ -31,6 +32,7 @@ const taskFormSchema = z.object({
   status: z.enum(['todo', 'in_progress', 'code_review', 'done'] as const),
   priority: z.enum(['low', 'medium', 'high', 'critical'] as const),
   tags: z.array(z.string()).default([]),
+  image_url: z.string().min(1, 'Image is required'),
 })
 
 type TaskFormInput = z.input<typeof taskFormSchema>
@@ -57,6 +59,7 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
       status: 'todo',
       priority: 'medium',
       tags: [],
+      image_url: '',
       ...initialValues,
     },
   })
@@ -70,6 +73,7 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
         status: 'todo',
         priority: 'medium',
         tags: [],
+        image_url: '',
         ...initialValues,
       })
     }
@@ -79,6 +83,11 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
     control: form.control,
     name: 'tags',
   }) ?? []
+
+  const imageUrl = useWatch({
+    control: form.control,
+    name: 'image_url',
+  })
 
   const toggleTag = (tag: string) => {
     const currentTags = form.getValues('tags') ?? []
@@ -190,6 +199,17 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
                 </p>
               )}
             </div>
+          </div>
+
+          <div>
+            <ImageUpload
+              value={imageUrl}
+              onChange={(value) => form.setValue('image_url', value ?? '', { shouldValidate: true })}
+              disabled={isLoading}
+            />
+            {form.formState.errors.image_url && (
+              <p className="text-sm text-destructive mt-1">{form.formState.errors.image_url.message}</p>
+            )}
           </div>
 
           <DialogFooter>
