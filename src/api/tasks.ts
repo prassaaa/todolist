@@ -68,6 +68,7 @@ export async function createTask(input: CreateTaskInput): Promise<Task> {
       status: input.status || 'todo',
       priority: input.priority || 'medium',
       tags: input.tags || [],
+      image_url: input.image_url,
     })
     .select()
     .single()
@@ -90,6 +91,7 @@ export async function updateTask(id: string, input: UpdateTaskInput): Promise<Ta
   if (input.priority !== undefined) updateData.priority = input.priority
   if (input.tags !== undefined) updateData.tags = input.tags
   if (input.is_archived !== undefined) updateData.is_archived = input.is_archived
+  if (input.image_url !== undefined) updateData.image_url = input.image_url
 
   const { data, error } = await supabase
     .from('tasks')
