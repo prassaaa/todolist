@@ -1,45 +1,38 @@
-import { Badge } from "@/components/ui/badge"
-import { AlertTriangle, ArrowUpRight, ArrowRight, Minus } from "lucide-react"
 import type { TaskPriority } from "@/types/task"
 
 interface PriorityIconProps {
   priority: TaskPriority
 }
 
-export function PriorityIcon({ priority }: PriorityIconProps) {
-  const config = {
-    low: {
-      label: "Low",
-      variant: "outline" as const,
-      icon: Minus,
-      className: "text-muted-foreground",
-    },
-    medium: {
-      label: "Medium",
-      variant: "outline" as const,
-      icon: ArrowRight,
-      className: "text-blue-500 dark:text-blue-400",
-    },
-    high: {
-      label: "High",
-      variant: "outline" as const,
-      icon: ArrowUpRight,
-      className: "text-orange-500 dark:text-orange-400",
-    },
-    critical: {
-      label: "Critical",
-      variant: "destructive" as const,
-      icon: AlertTriangle,
-      className: "",
-    },
-  }
+const config: Record<TaskPriority, { label: string; bgColor: string; textColor: string }> = {
+  low: {
+    label: "Low",
+    bgColor: "bg-slate-100 dark:bg-slate-800/50",
+    textColor: "text-slate-500 dark:text-slate-400",
+  },
+  medium: {
+    label: "Med",
+    bgColor: "bg-blue-50 dark:bg-blue-950/50",
+    textColor: "text-blue-500 dark:text-blue-400",
+  },
+  high: {
+    label: "High",
+    bgColor: "bg-orange-50 dark:bg-orange-950/50",
+    textColor: "text-orange-500 dark:text-orange-400",
+  },
+  critical: {
+    label: "Critical",
+    bgColor: "bg-red-50 dark:bg-red-950/50",
+    textColor: "text-red-500 dark:text-red-400",
+  },
+}
 
-  const { label, variant, icon: Icon, className } = config[priority]
+export function PriorityIcon({ priority }: PriorityIconProps) {
+  const { label, bgColor, textColor } = config[priority]
 
   return (
-    <Badge variant={variant} className={`gap-1.5 ${className}`}>
-      <Icon className="w-3 h-3" />
+    <span className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full ${bgColor} ${textColor}`}>
       {label}
-    </Badge>
+    </span>
   )
 }

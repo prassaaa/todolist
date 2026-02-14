@@ -1,11 +1,8 @@
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { StatusBadge } from "./StatusBadge"
 import { PriorityIcon } from "./PriorityIcon"
 import type { Task } from "@/types/task"
 import { formatDistanceToNow } from "date-fns"
-import { Calendar, Tag, ChevronDown, ChevronUp, X } from "lucide-react"
-import { MarkdownViewer } from "./MarkdownViewer"
+import { Calendar, Tag, X } from "lucide-react"
 import { useState, useEffect, useCallback } from "react"
 import { getTagColor } from "@/lib/tag-colors"
 
@@ -15,7 +12,6 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, onClick }: TaskCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
   const [showImageModal, setShowImageModal] = useState(false)
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -31,113 +27,85 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
 
   return (
     <>
-      <Card
-        className="hover:border-primary/50 transition-colors cursor-pointer"
+      <div
+        className="group bg-card border rounded-xl p-4 cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all duration-200"
         onClick={onClick}
       >
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold text-base leading-tight line-clamp-2 flex-1">
-              {task.title}
-            </h3>
-          </div>
-        </CardHeader>
-        
+        {/* Image */}
         {task.image_url && (
-          <CardContent className="pb-3">
+          <div className="mb-3 -mx-4 -mt-4">
             <img
               src={task.image_url}
               alt={task.title}
-              className="w-full h-48 object-cover rounded-lg cursor-zoom-in hover:opacity-90 transition-opacity"
+              className="w-full h-40 object-cover rounded-t-xl cursor-zoom-in hover:opacity-95 transition-opacity"
               onClick={(e) => {
                 e.stopPropagation()
                 setShowImageModal(true)
               }}
             />
-          </CardContent>
+          </div>
         )}
-        
+
+        {/* Title */}
+        <h3 className="font-medium text-sm leading-snug line-clamp-2 mb-2">
+          {task.title}
+        </h3>
+
+        {/* Description */}
         {task.description && (
-          <CardContent className="pb-3">
-            {!isExpanded ? (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {task.description}
-              </p>
-            ) : (
-              <MarkdownViewer content={task.description} />
-            )}
-            {task.description.length > 100 && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setIsExpanded(!isExpanded)
-                }}
-                className="mt-2 text-xs text-primary hover:underline flex items-center gap-1"
-              >
-                {isExpanded ? (
-                  <>
-                    Show less <ChevronUp className="w-3 h-3" />
-                  </>
-                ) : (
-                  <>
-                    Show more <ChevronDown className="w-3 h-3" />
-                  </>
-                )}
-              </button>
-            )}
-          </CardContent>
+          <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+            {task.description}
+          </p>
         )}
 
-        <CardFooter className="pt-0 gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <StatusBadge status={task.status} />
+        {/* Tags */}
+        {task.tags.length > 0 && (
+          <div className="flex items-center gap-1 flex-wrap mb-3">
+            {task.tags.slice(0, 2).map((tag) => (
+              <span
+                key={tag}
+                className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-md ${getTagColor(tag)}`}
+              >
+                <Tag className="w-2.5 h-2.5" />
+                {tag}
+              </span>
+            ))}
+            {task.tags.length > 2 && (
+              <span className="text-[10px] text-muted-foreground">
+                +{task.tags.length - 2}
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-1.5">
-            <PriorityIcon priority={task.priority} />
-          </div>
-          
-          <div className="flex-1" />
-          
-          {task.tags.length > 0 && (
-            <div className="flex items-center gap-1 flex-wrap">
-              {task.tags.slice(0, 2).map((tag) => (
-                <Badge key={tag} variant="secondary" className={`text-xs gap-1 ${getTagColor(tag)}`}>
-                  <Tag className="w-2.5 h-2.5" />
-                  {tag}
-                </Badge>
-              ))}
-              {task.tags.length > 2 && (
-                <Badge variant="secondary" className="text-xs">
-                  +{task.tags.length - 2}
-                </Badge>
-              )}
-            </div>
-          )}
+        )}
 
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Calendar className="w-3 h-3" />
+        {/* Footer */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <StatusBadge status={task.status} />
+          <PriorityIcon priority={task.priority} />
+          <span className="flex-1" />
+          <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            <Calendar className="w-2.5 h-2.5" />
             {formatDistanceToNow(new Date(task.created_at), { addSuffix: true })}
-          </div>
-        </CardFooter>
-      </Card>
+          </span>
+        </div>
+      </div>
 
       {/* Image Preview Modal */}
       {showImageModal && task.image_url && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
           onClick={() => setShowImageModal(false)}
         >
           <button
-            className="absolute top-4 right-4 text-white hover:text-white/80 transition-colors"
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
             onClick={() => setShowImageModal(false)}
           >
-            <X className="w-8 h-8" />
+            <X className="w-5 h-5" />
           </button>
-
           <img
             src={task.image_url}
             alt={task.title}
-            className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
+            className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           />
         </div>

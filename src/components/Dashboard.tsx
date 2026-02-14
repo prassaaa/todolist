@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Task, TaskStatus, TaskPriority, ViewMode } from '@/types/task'
+import type { Task, TaskStatus, TaskPriority, ViewMode, CreateTaskInput } from '@/types/task'
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, useArchiveTask, useTaskStats } from '@/hooks/useTasks'
 import { TaskForm } from './features/TaskForm'
 import type { TaskFormValues } from './features/TaskForm'
@@ -7,7 +7,6 @@ import { BoardView } from './features/BoardView'
 import { ListView } from './features/ListView'
 import { QuickAdd } from './features/QuickAdd'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -16,28 +15,32 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { LayoutGrid, List, Plus, ListChecks, Circle, Clock, Code2, CheckCircle2, Archive, TrendingUp } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { LayoutGrid, List, Plus, Circle, Clock, Code2, CheckCircle2, Archive } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export function Dashboard() {
-  const [viewMode, setViewMode] = useState<ViewMode>('list')
+  const [viewMode, setViewMode] = useState<ViewMode>('board')
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [filterStatus, setFilterStatus] = useState<TaskStatus | 'all'>('all')
   const [filterPriority, setFilterPriority] = useState<TaskPriority | 'all'>('all')
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
-  // Fetch tasks
   const { data: tasks = [], isLoading } = useTasks({
     archived: false,
     ...(filterStatus !== 'all' && { status: filterStatus }),
     ...(filterPriority !== 'all' && { priority: filterPriority }),
   })
 
-  // Fetch stats
   const { data: stats } = useTaskStats()
 
-  // Mutations
   const createMutation = useCreateTask()
   const updateMutation = useUpdateTask()
   const deleteMutation = useDeleteTask()
@@ -50,10 +53,7 @@ export function Dashboard() {
 
   const handleUpdateTask = (values: TaskFormValues) => {
     if (!editingTask) return
-    updateMutation.mutate({
-      id: editingTask.id,
-      input: values,
-    })
+    updateMutation.mutate({ id: editingTask.id, input: values })
     setEditingTask(null)
     setIsFormOpen(false)
   }
@@ -78,201 +78,118 @@ export function Dashboard() {
     setIsFormOpen(true)
   }
 
-  const handleQuickAdd = (values: TaskFormValues) => {
+  const handleQuickAdd = (values: CreateTaskInput) => {
     createMutation.mutate(values)
   }
 
   const handleDropTask = (taskId: string, newStatus: TaskStatus) => {
-    updateMutation.mutate({
-      id: taskId,
-      input: { status: newStatus },
-    })
+    updateMutation.mutate({ id: taskId, input: { status: newStatus } })
   }
+
+  const statItems = [
+    { key: 'todo', label: 'To Do', value: stats?.todo ?? 0, icon: Circle, color: 'text-slate-500' },
+    { key: 'inProgress', label: 'In Progress', value: stats?.inProgress ?? 0, icon: Clock, color: 'text-blue-500' },
+    { key: 'codeReview', label: 'Review', value: stats?.codeReview ?? 0, icon: Code2, color: 'text-amber-500' },
+    { key: 'done', label: 'Done', value: stats?.done ?? 0, icon: CheckCircle2, color: 'text-emerald-500' },
+    { key: 'archived', label: 'Archived', value: stats?.archived ?? 0, icon: Archive, color: 'text-rose-400' },
+  ]
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {/* Compact Stats Row */}
+      <div className="flex items-center gap-6 overflow-x-auto pb-1">
         {stats ? (
-          <>
-            {[
-              {
-                label: 'Total',
-                value: stats.total,
-                icon: ListChecks,
-                iconBg: 'bg-gradient-to-br from-violet-500 to-purple-600',
-                accentBorder: 'border-l-violet-500',
-                textColor: 'text-violet-600 dark:text-violet-400',
-              },
-              {
-                label: 'To Do',
-                value: stats.todo,
-                icon: Circle,
-                iconBg: 'bg-gradient-to-br from-slate-400 to-slate-500',
-                accentBorder: 'border-l-slate-400',
-                textColor: 'text-slate-600 dark:text-slate-400',
-              },
-              {
-                label: 'In Progress',
-                value: stats.inProgress,
-                icon: Clock,
-                iconBg: 'bg-gradient-to-br from-blue-500 to-cyan-500',
-                accentBorder: 'border-l-blue-500',
-                textColor: 'text-blue-600 dark:text-blue-400',
-              },
-              {
-                label: 'Code Review',
-                value: stats.codeReview,
-                icon: Code2,
-                iconBg: 'bg-gradient-to-br from-amber-500 to-orange-500',
-                accentBorder: 'border-l-amber-500',
-                textColor: 'text-amber-600 dark:text-amber-400',
-              },
-              {
-                label: 'Done',
-                value: stats.done,
-                icon: CheckCircle2,
-                iconBg: 'bg-gradient-to-br from-emerald-500 to-green-600',
-                accentBorder: 'border-l-emerald-500',
-                textColor: 'text-emerald-600 dark:text-emerald-400',
-              },
-              {
-                label: 'Archived',
-                value: stats.archived,
-                icon: Archive,
-                iconBg: 'bg-gradient-to-br from-rose-400 to-pink-500',
-                accentBorder: 'border-l-rose-400',
-                textColor: 'text-rose-500 dark:text-rose-400',
-              },
-            ].map((item) => {
-              const Icon = item.icon
-              const percentage = stats.total > 0 ? Math.round((item.value / stats.total) * 100) : 0
-              return (
-                <Card
-                  key={item.label}
-                  className={`relative overflow-hidden border-l-4 ${item.accentBorder} hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 group`}
-                >
-                  <CardHeader className="pb-1 pt-4 px-4">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        {item.label}
-                      </CardTitle>
-                      <div className={`${item.iconBg} p-1.5 rounded-lg shadow-sm group-hover:scale-110 transition-transform duration-300`}>
-                        <Icon className="w-3.5 h-3.5 text-white" />
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="px-4 pb-4 pt-0">
-                    <div className="flex items-end gap-2">
-                      <span className={`text-3xl font-extrabold tracking-tight ${item.textColor}`}>
-                        {item.value}
-                      </span>
-                      {item.label !== 'Total' && stats.total > 0 && (
-                        <span className="text-xs font-medium text-muted-foreground mb-1.5">
-                          {percentage}%
-                        </span>
-                      )}
-                    </div>
-                    {/* Mini progress bar */}
-                    {item.label !== 'Total' && (
-                      <div className="mt-2.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${item.iconBg} transition-all duration-700 ease-out`}
-                          style={{ width: `${stats.total > 0 ? Math.max((item.value / stats.total) * 100, item.value > 0 ? 4 : 0) : 0}%` }}
-                        />
-                      </div>
-                    )}
-                    {/* Total card shows a summary line instead */}
-                    {item.label === 'Total' && (
-                      <div className="mt-2.5 flex items-center gap-1 text-xs text-muted-foreground">
-                        <TrendingUp className="w-3 h-3" />
-                        <span>{stats.done} completed</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </>
+          statItems.map((item) => {
+            const Icon = item.icon
+            return (
+              <div key={item.key} className="flex items-center gap-2 shrink-0">
+                <Icon className={`w-4 h-4 ${item.color}`} />
+                <span className="text-sm text-muted-foreground">{item.label}</span>
+                <span className="text-sm font-semibold tabular-nums">{item.value}</span>
+              </div>
+            )
+          })
         ) : (
-          Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="border-l-4 border-l-muted">
-              <CardHeader className="pb-1 pt-4 px-4">
-                <div className="flex items-center justify-between">
-                  <Skeleton className="h-3 w-16" />
-                  <Skeleton className="h-7 w-7 rounded-lg" />
-                </div>
-              </CardHeader>
-              <CardContent className="px-4 pb-4 pt-0">
-                <Skeleton className="h-9 w-14 mt-1" />
-                <Skeleton className="h-1.5 w-full rounded-full mt-3" />
-              </CardContent>
-            </Card>
+          Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <Skeleton className="h-4 w-4 rounded-full" />
+              <Skeleton className="h-4 w-14" />
+              <Skeleton className="h-4 w-5" />
+            </div>
           ))
         )}
       </div>
 
-      {/* Quick Add & Filters */}
-      <div className="flex flex-col gap-4">
-        <QuickAdd onAdd={handleQuickAdd} isLoading={createMutation.isPending} />
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+        <div className="flex-1 w-full sm:w-auto">
+          <QuickAdd onAdd={handleQuickAdd} isLoading={createMutation.isPending} />
+        </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          {/* Filters */}
-          <div className="flex flex-wrap gap-2">
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as TaskStatus | 'all')}
-              className="px-3 py-1.5 text-sm border rounded-md bg-background"
-            >
-              <option value="all">All Statuses</option>
-              <option value="todo">To Do</option>
-              <option value="in_progress">In Progress</option>
-              <option value="code_review">Code Review</option>
-              <option value="done">Done</option>
-            </select>
+        <div className="flex items-center gap-2 shrink-0">
+          <Select
+            value={filterStatus}
+            onValueChange={(v) => setFilterStatus(v as TaskStatus | 'all')}
+          >
+            <SelectTrigger className="w-[130px] h-9 text-xs">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="todo">To Do</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="code_review">Code Review</SelectItem>
+              <SelectItem value="done">Done</SelectItem>
+            </SelectContent>
+          </Select>
 
-            <select
-              value={filterPriority}
-              onChange={(e) => setFilterPriority(e.target.value as TaskPriority | 'all')}
-              className="px-3 py-1.5 text-sm border rounded-md bg-background"
+          <Select
+            value={filterPriority}
+            onValueChange={(v) => setFilterPriority(v as TaskPriority | 'all')}
+          >
+            <SelectTrigger className="w-[130px] h-9 text-xs">
+              <SelectValue placeholder="Priority" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Priority</SelectItem>
+              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="critical">Critical</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="flex border rounded-lg overflow-hidden">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-accent text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
-              <option value="all">All Priorities</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="critical">Critical</option>
-            </select>
+              <List className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('board')}
+              className={`p-2 transition-colors ${
+                viewMode === 'board'
+                  ? 'bg-accent text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
           </div>
 
-          {/* View Toggle & Create Button */}
-          <div className="flex gap-2">
-            <div className="flex border rounded-md">
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="icon"
-                onClick={() => setViewMode('list')}
-                className="rounded-none rounded-l-md"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'board' ? 'default' : 'ghost'}
-                size="icon"
-                onClick={() => setViewMode('board')}
-                className="rounded-none rounded-r-md"
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <Button onClick={() => {
-              setEditingTask(null)
-              setIsFormOpen(true)
-            }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Task
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            onClick={() => { setEditingTask(null); setIsFormOpen(true) }}
+            className="h-9"
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            New Task
+          </Button>
         </div>
       </div>
 
@@ -303,20 +220,20 @@ export function Dashboard() {
         isLoading={createMutation.isPending || updateMutation.isPending}
       />
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation */}
       <Dialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Delete Task</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this task? This action cannot be undone.
+              Are you sure? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>
+            <Button variant="outline" size="sm" onClick={() => setDeleteConfirmId(null)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete} disabled={deleteMutation.isPending}>
+            <Button variant="destructive" size="sm" onClick={confirmDelete} disabled={deleteMutation.isPending}>
               {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>

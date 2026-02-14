@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Moon, Sun } from 'lucide-react'
+import { Moon, Sun, CheckSquare } from 'lucide-react'
 import { Dashboard } from './components/Dashboard'
 
 function App() {
@@ -19,7 +19,6 @@ function App() {
     setHasUserPreference(true)
   }
 
-  // Apply theme to DOM and save to localStorage only if user has set a preference
   useEffect(() => {
     const root = document.documentElement
     if (isDark) {
@@ -32,7 +31,6 @@ function App() {
     }
   }, [isDark, hasUserPreference])
 
-  // Listen to system theme changes when user hasn't set a preference
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     const handleChange = (e: MediaQueryListEvent) => {
@@ -40,7 +38,6 @@ function App() {
         setIsDark(e.matches)
       }
     }
-
     mediaQuery.addEventListener('change', handleChange)
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [hasUserPreference])
@@ -48,22 +45,28 @@ function App() {
   return (
     <div className={`min-h-screen transition-colors duration-500 ease-in-out ${isDark ? 'dark' : ''}`}>
       <div className="min-h-screen bg-background text-foreground transition-colors duration-500 ease-in-out">
-        <header className="border-b border-border px-6 py-4 sticky top-0 bg-background/95 backdrop-blur z-10 transition-colors duration-500 ease-in-out">
-          <div className="mx-auto max-w-7xl flex items-center justify-between">
-            <h1 className="text-2xl font-bold font-mono transition-colors duration-500 ease-in-out">DevTask Flow</h1>
+        {/* Minimal Header */}
+        <header className="border-b border-border/40 sticky top-0 bg-background/80 backdrop-blur-xl z-10 transition-colors duration-500">
+          <div className="mx-auto max-w-6xl flex items-center justify-between px-6 h-14">
+            <div className="flex items-center gap-2.5">
+              <div className="bg-primary rounded-lg p-1.5">
+                <CheckSquare className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <span className="text-base font-semibold tracking-tight">DevTask</span>
+            </div>
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-accent transition-all duration-300 hover:scale-110 active:scale-95"
+              className="p-2 rounded-lg hover:bg-accent transition-all duration-200"
               aria-label="Toggle theme"
             >
-              <div className="relative w-5 h-5">
+              <div className="relative w-4 h-4">
                 <Sun
-                  className={`absolute inset-0 w-5 h-5 transition-all duration-500 ease-in-out ${
+                  className={`absolute inset-0 w-4 h-4 transition-all duration-500 ease-in-out ${
                     isDark ? 'rotate-0 scale-100 opacity-100' : 'rotate-90 scale-0 opacity-0'
                   }`}
                 />
                 <Moon
-                  className={`absolute inset-0 w-5 h-5 transition-all duration-500 ease-in-out ${
+                  className={`absolute inset-0 w-4 h-4 transition-all duration-500 ease-in-out ${
                     !isDark ? 'rotate-0 scale-100 opacity-100' : '-rotate-90 scale-0 opacity-0'
                   }`}
                 />
@@ -71,7 +74,8 @@ function App() {
             </button>
           </div>
         </header>
-        <main className="mx-auto max-w-7xl px-6 py-8">
+
+        <main className="mx-auto max-w-6xl px-6 py-6">
           <Dashboard />
         </main>
       </div>

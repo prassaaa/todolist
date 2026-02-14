@@ -1,7 +1,7 @@
 import type { Task, TaskStatus } from '@/types/task'
 import { TaskCard } from './TaskCard'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Circle, Clock, Code2, CheckCircle2 } from 'lucide-react'
 import {
   DndContext,
   DragOverlay,
@@ -27,35 +27,20 @@ interface BoardViewProps {
 const COLUMNS: TaskStatus[] = ['todo', 'in_progress', 'code_review', 'done']
 
 const COLUMN_CONFIG = {
-  todo: { title: 'To Do', count: 0 },
-  in_progress: { title: 'In Progress', count: 0 },
-  code_review: { title: 'Code Review', count: 0 },
-  done: { title: 'Done', count: 0 },
+  todo: { title: 'To Do', icon: Circle, color: 'text-slate-500' },
+  in_progress: { title: 'In Progress', icon: Clock, color: 'text-blue-500' },
+  code_review: { title: 'Review', icon: Code2, color: 'text-amber-500' },
+  done: { title: 'Done', icon: CheckCircle2, color: 'text-emerald-500' },
 }
 
 function createEmptyColumns<T>(): Record<TaskStatus, T[]> {
-  return {
-    todo: [],
-    in_progress: [],
-    code_review: [],
-    done: [],
-  }
+  return { todo: [], in_progress: [], code_review: [], done: [] }
 }
 
 function SortableTaskCard({ task, onClick }: { task: Task; onClick?: () => void }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
-    transition: {
-      duration: 250,
-      easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
-    },
+    transition: { duration: 250, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' },
   })
 
   const style = {
@@ -65,13 +50,7 @@ function SortableTaskCard({ task, onClick }: { task: Task; onClick?: () => void 
   }
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="touch-none transition-opacity duration-200"
-    >
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="touch-none">
       <TaskCard task={task} onClick={onClick} />
     </div>
   )
@@ -83,12 +62,11 @@ function isTaskStatus(value: string): value is TaskStatus {
 
 function DroppableColumn({ id, children }: { id: TaskStatus; children: React.ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({ id })
-
   return (
     <div
       ref={setNodeRef}
-      className={`space-y-3 min-h-[100px] rounded-lg transition-colors ${
-        isOver ? 'bg-primary/5 ring-2 ring-primary/20' : ''
+      className={`space-y-2.5 min-h-[120px] rounded-lg p-0.5 transition-colors ${
+        isOver ? 'bg-primary/5 ring-1 ring-primary/20' : ''
       }`}
     >
       {children}
@@ -98,32 +76,20 @@ function DroppableColumn({ id, children }: { id: TaskStatus; children: React.Rea
 
 export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardViewProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null)
-  // Optimistic overrides: taskId -> newStatus (applied instantly on drop, before server responds)
   const [optimisticMoves, setOptimisticMoves] = useState<Record<string, TaskStatus>>({})
-  // Only stores manual reorder overrides per column, not full state
   const [localReorder, setLocalReorder] = useState<Record<string, string[]>>({})
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
-  // Merge server tasks with optimistic moves so cards appear in the new column instantly
-  // Also clean up moves that the server has already caught up with
   const cleanOptimisticMoves = useMemo(() => {
     if (Object.keys(optimisticMoves).length === 0) return optimisticMoves
     const serverMap = new Map(tasks.map((t) => [t.id, t.status]))
     const stillPending: Record<string, TaskStatus> = {}
     for (const [id, targetStatus] of Object.entries(optimisticMoves)) {
-      if (serverMap.get(id) !== targetStatus) {
-        stillPending[id] = targetStatus
-      }
+      if (serverMap.get(id) !== targetStatus) stillPending[id] = targetStatus
     }
     return stillPending
   }, [tasks, optimisticMoves])
@@ -132,129 +98,72 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
     if (Object.keys(cleanOptimisticMoves).length === 0) return tasks
     return tasks.map((task) => {
       const override = cleanOptimisticMoves[task.id]
-      if (override && override !== task.status) {
-        return { ...task, status: override }
-      }
-      return task
+      return override && override !== task.status ? { ...task, status: override } : task
     })
   }, [tasks, cleanOptimisticMoves])
 
   const tasksByColumn = useMemo(() => {
     const grouped = createEmptyColumns<Task>()
+    effectiveTasks.forEach((task) => grouped[task.status].push(task))
 
-    // First, group all tasks by their status (using effective/optimistic status)
-    effectiveTasks.forEach((task) => {
-      grouped[task.status].push(task)
-    })
-
-    // Then apply any local reorder overrides
     COLUMNS.forEach((column) => {
       const reorderIds = localReorder[column]
       if (reorderIds) {
         const taskMap = new Map(grouped[column].map((t) => [t.id, t]))
         const reordered: Task[] = []
         const seen = new Set<string>()
-
-        // Place tasks in the reorder order
         reorderIds.forEach((id) => {
           const task = taskMap.get(id)
-          if (task) {
-            reordered.push(task)
-            seen.add(id)
-          }
+          if (task) { reordered.push(task); seen.add(id) }
         })
-
-        // Append any new tasks not in the reorder list
-        grouped[column].forEach((task) => {
-          if (!seen.has(task.id)) {
-            reordered.push(task)
-          }
-        })
-
+        grouped[column].forEach((task) => { if (!seen.has(task.id)) reordered.push(task) })
         grouped[column] = reordered
       }
     })
-
     return grouped
   }, [effectiveTasks, localReorder])
 
   const handleDragStart = (event: DragStartEvent) => {
-    const activeId = String(event.active.id)
-    const draggedTask = effectiveTasks.find((t) => t.id === activeId) ?? null
-    setActiveTask(draggedTask)
+    setActiveTask(effectiveTasks.find((t) => t.id === String(event.active.id)) ?? null)
   }
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event
-
-    if (!over) {
-      setActiveTask(null)
-      return
-    }
+    if (!over) { setActiveTask(null); return }
 
     const activeId = String(active.id)
     const overId = String(over.id)
-
-    // Find the task being dragged
     const draggedTask = effectiveTasks.find((t) => t.id === activeId)
-    if (!draggedTask) {
-      setActiveTask(null)
-      return
-    }
+    if (!draggedTask || activeId === overId) { setActiveTask(null); return }
 
-    // If dropped on same task, do nothing
-    if (activeId === overId) {
-      setActiveTask(null)
-      return
-    }
-
-    // If dropped on another task in the same column, reorder within column
     const droppedOnTask = effectiveTasks.find((t) => t.id === overId)
     if (droppedOnTask && droppedOnTask.status === draggedTask.status) {
       const column = draggedTask.status
-      const currentColumnIds = tasksByColumn[column].map((task) => task.id)
+      const currentColumnIds = tasksByColumn[column].map((t) => t.id)
       const oldIndex = currentColumnIds.indexOf(activeId)
       const newIndex = currentColumnIds.indexOf(overId)
-
-      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
-        setActiveTask(null)
-        return
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        setLocalReorder((prev) => ({ ...prev, [column]: arrayMove(currentColumnIds, oldIndex, newIndex) }))
       }
-
-      const reorderedIds = arrayMove(currentColumnIds, oldIndex, newIndex)
-      setLocalReorder((prev) => ({
-        ...prev,
-        [column]: reorderedIds,
-      }))
       setActiveTask(null)
       return
     }
 
-    // Determine new status based on the column it was dropped into
     let newStatus: TaskStatus | null = null
+    if (isTaskStatus(overId)) newStatus = overId
+    else if (droppedOnTask) newStatus = droppedOnTask.status
 
-    if (isTaskStatus(overId)) {
-      newStatus = overId
-    } else if (droppedOnTask) {
-      newStatus = droppedOnTask.status
-    }
-
-    // Only update if status changed
     if (newStatus && newStatus !== draggedTask.status) {
       const targetStatus = newStatus
-      // Apply optimistic move immediately so card appears in new column
       setOptimisticMoves((prev) => ({ ...prev, [draggedTask.id]: targetStatus }))
-      // Clear reorder for affected columns
       setLocalReorder((prev) => {
         const updated = { ...prev }
         delete updated[draggedTask.status]
         delete updated[targetStatus]
         return updated
       })
-      onDropTask?.(draggedTask.id, newStatus)
+      onDropTask?.(draggedTask.id, targetStatus)
     }
-
-    // Clear active task after processing so overlay stays visible until card is placed
     setActiveTask(null)
   }, [effectiveTasks, tasksByColumn, onDropTask])
 
@@ -262,16 +171,12 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {COLUMNS.map((column) => (
-          <Card key={column} className="h-[500px]">
-            <CardHeader className="pb-4">
-              <Skeleton className="h-6 w-24" />
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-32 rounded-lg" />
-              ))}
-            </CardContent>
-          </Card>
+          <div key={column} className="space-y-3">
+            <Skeleton className="h-5 w-24" />
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-36 rounded-xl" />
+            ))}
+          </div>
         ))}
       </div>
     )
@@ -284,48 +189,44 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {COLUMNS.map((column) => {
+          const config = COLUMN_CONFIG[column]
+          const Icon = config.icon
           const columnTasks = tasksByColumn[column]
+
           return (
-            <Card key={column} className="h-full min-h-[500px]">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">
-                    {COLUMN_CONFIG[column].title}
-                  </CardTitle>
-                  <span className="text-sm font-medium text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
-                    {columnTasks.length}
-                  </span>
+            <div key={column} className="space-y-3">
+              {/* Column Header */}
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <Icon className={`w-4 h-4 ${config.color}`} />
+                  <span className="text-sm font-medium">{config.title}</span>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <DroppableColumn id={column}>
-                  <SortableContext items={columnTasks.map((t) => t.id)}>
-                    {columnTasks.map((task) => (
-                      <SortableTaskCard
-                        key={task.id}
-                        task={task}
-                        onClick={() => onTaskClick?.(task)}
-                      />
-                    ))}
-                  </SortableContext>
-                  {columnTasks.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground text-sm">
-                      No tasks
-                    </div>
-                  )}
-                </DroppableColumn>
-              </CardContent>
-            </Card>
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full tabular-nums">
+                  {columnTasks.length}
+                </span>
+              </div>
+
+              {/* Column Content */}
+              <DroppableColumn id={column}>
+                <SortableContext items={columnTasks.map((t) => t.id)}>
+                  {columnTasks.map((task) => (
+                    <SortableTaskCard key={task.id} task={task} onClick={() => onTaskClick?.(task)} />
+                  ))}
+                </SortableContext>
+                {columnTasks.length === 0 && (
+                  <div className="text-center py-10 text-xs text-muted-foreground border border-dashed rounded-xl">
+                    No tasks
+                  </div>
+                )}
+              </DroppableColumn>
+            </div>
           )
         })}
       </div>
 
-      <DragOverlay dropAnimation={{
-        duration: 250,
-        easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
-      }}>
+      <DragOverlay dropAnimation={{ duration: 250, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' }}>
         {activeTask && (
           <div className="rotate-2 scale-105 shadow-xl opacity-95">
             <TaskCard task={activeTask} />

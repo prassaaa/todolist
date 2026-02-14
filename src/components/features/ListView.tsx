@@ -1,17 +1,9 @@
 import type { Task } from '@/types/task'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { StatusBadge } from './StatusBadge'
 import { PriorityIcon } from './PriorityIcon'
 import { Badge } from '@/components/ui/badge'
 import { formatDistanceToNow } from 'date-fns'
-import { MoreVertical, Trash2, Archive } from 'lucide-react'
+import { MoreVertical, Trash2, Archive, Image } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -37,147 +29,127 @@ function TaskRow({ task, onTaskClick, onArchive, onDelete }: {
   onDelete?: (id: string) => void
 }) {
   return (
-    <TableRow 
-      className="cursor-pointer hover:bg-muted/50 transition-colors"
+    <div
+      className="group flex items-center gap-4 px-4 py-3 hover:bg-accent/50 cursor-pointer transition-colors rounded-lg"
       onClick={() => onTaskClick?.(task)}
     >
-      <TableCell className="font-medium">
-        <div className="max-w-[300px]">
-          <div className="truncate">{task.title}</div>
-        </div>
-      </TableCell>
-      <TableCell>
-        <StatusBadge status={task.status} />
-      </TableCell>
-      <TableCell>
-        <PriorityIcon priority={task.priority} />
-      </TableCell>
-      <TableCell>
+      {/* Thumbnail */}
+      <div className="shrink-0">
+        {task.image_url ? (
+          <img
+            src={task.image_url}
+            alt=""
+            className="w-10 h-10 rounded-lg object-cover"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+            <Image className="w-4 h-4 text-muted-foreground" />
+          </div>
+        )}
+      </div>
+
+      {/* Title & Description */}
+      <div className="flex-1 min-w-0">
+        <div className="font-medium text-sm truncate">{task.title}</div>
         {task.description && (
-          <div className="max-w-[400px] text-sm text-muted-foreground line-clamp-1">
+          <div className="text-xs text-muted-foreground truncate mt-0.5">
             {task.description}
           </div>
         )}
-      </TableCell>
-      <TableCell>
-        <div className="flex flex-wrap gap-1.5">
-          {task.tags.slice(0, 3).map((tag) => (
-            <Badge key={tag} variant="secondary" className={`text-xs ${getTagColor(tag)}`}>
-              {tag}
-            </Badge>
-          ))}
-          {task.tags.length > 3 && (
-            <Badge variant="secondary" className="text-xs">
-              +{task.tags.length - 3}
-            </Badge>
-          )}
-        </div>
-      </TableCell>
-      <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-        {formatDistanceToNow(new Date(task.created_at), { addSuffix: true })}
-      </TableCell>
-      <TableCell>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive?.(task.id) }}>
-              <Archive className="mr-2 h-4 w-4" />
-              Archive
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={(e) => { e.stopPropagation(); onDelete?.(task.id) }}
-              className="text-destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </TableCell>
-    </TableRow>
-  )
-}
+      </div>
 
-function SkeletonRow() {
-  return (
-    <TableRow>
-      <TableCell><Skeleton className="h-5 w-[200px]" /></TableCell>
-      <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-      <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-      <TableCell><Skeleton className="h-5 w-[300px]" /></TableCell>
-      <TableCell><Skeleton className="h-5 w-[100px]" /></TableCell>
-      <TableCell><Skeleton className="h-5 w-[100px]" /></TableCell>
-      <TableCell><Skeleton className="h-8 w-8" /></TableCell>
-    </TableRow>
+      {/* Tags */}
+      <div className="hidden md:flex items-center gap-1 shrink-0">
+        {task.tags.slice(0, 2).map((tag) => (
+          <Badge key={tag} variant="secondary" className={`text-[10px] px-1.5 py-0 h-5 ${getTagColor(tag)}`}>
+            {tag}
+          </Badge>
+        ))}
+        {task.tags.length > 2 && (
+          <span className="text-[10px] text-muted-foreground">+{task.tags.length - 2}</span>
+        )}
+      </div>
+
+      {/* Status & Priority */}
+      <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+        <StatusBadge status={task.status} />
+        <PriorityIcon priority={task.priority} />
+      </div>
+
+      {/* Date */}
+      <span className="hidden lg:block text-[11px] text-muted-foreground shrink-0 w-24 text-right">
+        {formatDistanceToNow(new Date(task.created_at), { addSuffix: true })}
+      </span>
+
+      {/* Actions */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+          <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+            <MoreVertical className="h-3.5 w-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive?.(task.id) }}>
+            <Archive className="mr-2 h-3.5 w-3.5" />
+            Archive
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={(e) => { e.stopPropagation(); onDelete?.(task.id) }}
+            className="text-destructive"
+          >
+            <Trash2 className="mr-2 h-3.5 w-3.5" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   )
 }
 
 export function ListView({ tasks, isLoading, onTaskClick, onArchive, onDelete }: ListViewProps) {
   if (isLoading) {
     return (
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Tags</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead className="w-[60px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {[1, 2, 3, 4, 5].map((i) => <SkeletonRow key={i} />)}
-          </TableBody>
-        </Table>
+      <div className="space-y-1">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="flex items-center gap-4 px-4 py-3">
+            <Skeleton className="w-10 h-10 rounded-lg" />
+            <div className="flex-1 space-y-1.5">
+              <Skeleton className="h-4 w-[200px]" />
+              <Skeleton className="h-3 w-[300px]" />
+            </div>
+            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+          </div>
+        ))}
       </div>
     )
   }
 
   if (tasks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="text-6xl mb-4">📝</div>
-        <h3 className="text-xl font-semibold mb-2">No tasks yet</h3>
-        <p className="text-muted-foreground max-w-md">
-          Get started by creating your first task. Use the quick add button above or click "Create Task" to begin.
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center mb-4">
+          <Image className="w-6 h-6 text-muted-foreground" />
+        </div>
+        <h3 className="text-base font-medium mb-1">No tasks yet</h3>
+        <p className="text-sm text-muted-foreground max-w-sm">
+          Create your first task to get started.
         </p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Priority</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Tags</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead className="w-[60px]"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {tasks.map((task) => (
-            <TaskRow
-              key={task.id}
-              task={task}
-              onTaskClick={onTaskClick}
-              onArchive={onArchive}
-              onDelete={onDelete}
-            />
-          ))}
-        </TableBody>
-      </Table>
+    <div className="border rounded-xl divide-y">
+      {tasks.map((task) => (
+        <TaskRow
+          key={task.id}
+          task={task}
+          onTaskClick={onTaskClick}
+          onArchive={onArchive}
+          onDelete={onDelete}
+        />
+      ))}
     </div>
   )
 }

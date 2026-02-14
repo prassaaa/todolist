@@ -1,41 +1,43 @@
-import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, Clock, Code2, Circle } from "lucide-react"
 import type { TaskStatus } from "@/types/task"
 
 interface StatusBadgeProps {
   status: TaskStatus
 }
 
-export function StatusBadge({ status }: StatusBadgeProps) {
-  const config = {
-    todo: {
-      label: "To Do",
-      variant: "secondary" as const,
-      icon: Circle,
-    },
-    in_progress: {
-      label: "In Progress",
-      variant: "default" as const,
-      icon: Clock,
-    },
-    code_review: {
-      label: "Code Review",
-      variant: "outline" as const,
-      icon: Code2,
-    },
-    done: {
-      label: "Done",
-      variant: "default" as const,
-      icon: CheckCircle2,
-    },
-  }
+const config: Record<TaskStatus, { label: string; dotColor: string; bgColor: string; textColor: string }> = {
+  todo: {
+    label: "To Do",
+    dotColor: "bg-slate-400",
+    bgColor: "bg-slate-100 dark:bg-slate-800/50",
+    textColor: "text-slate-600 dark:text-slate-400",
+  },
+  in_progress: {
+    label: "In Progress",
+    dotColor: "bg-blue-500",
+    bgColor: "bg-blue-50 dark:bg-blue-950/50",
+    textColor: "text-blue-600 dark:text-blue-400",
+  },
+  code_review: {
+    label: "Review",
+    dotColor: "bg-amber-500",
+    bgColor: "bg-amber-50 dark:bg-amber-950/50",
+    textColor: "text-amber-600 dark:text-amber-400",
+  },
+  done: {
+    label: "Done",
+    dotColor: "bg-emerald-500",
+    bgColor: "bg-emerald-50 dark:bg-emerald-950/50",
+    textColor: "text-emerald-600 dark:text-emerald-400",
+  },
+}
 
-  const { label, variant, icon: Icon } = config[status]
+export function StatusBadge({ status }: StatusBadgeProps) {
+  const { label, dotColor, bgColor, textColor } = config[status]
 
   return (
-    <Badge variant={variant} className="gap-1.5">
-      <Icon className="w-3 h-3" />
+    <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${bgColor} ${textColor}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
       {label}
-    </Badge>
+    </span>
   )
 }

@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Plus } from 'lucide-react'
-import type { TaskFormValues } from './TaskForm'
+import type { CreateTaskInput } from '@/types/task'
 
 interface QuickAddProps {
-  onAdd: (values: TaskFormValues) => void
+  onAdd: (values: CreateTaskInput) => void
   isLoading?: boolean
 }
 
@@ -27,22 +25,16 @@ export function QuickAdd({ onAdd, isLoading }: QuickAddProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
-      <Input
+    <form onSubmit={handleSubmit} className="relative">
+      <Plus className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <input
         type="text"
-        placeholder="Quick add task... (Press Enter)"
+        placeholder="Quick add task..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         disabled={isLoading}
-        className="flex-1"
+        className="w-full h-9 pl-9 pr-4 text-sm bg-muted/50 border-0 rounded-lg placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50 transition-colors"
       />
-      <Button 
-        type="submit" 
-        disabled={!title.trim() || isLoading}
-        size="icon"
-      >
-        <Plus className="h-4 w-4" />
-      </Button>
     </form>
   )
 }
