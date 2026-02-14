@@ -6,7 +6,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -21,8 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
-import { X } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { ImageUpload } from './ImageUpload'
 import type { TaskStatus, TaskPriority } from '@/types/task'
 
@@ -64,7 +62,6 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
     },
   })
 
-  // Reset form when dialog opens or initialValues change (switch between create/edit)
   useEffect(() => {
     if (open) {
       form.reset({
@@ -79,15 +76,8 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
     }
   }, [open, initialValues, form])
 
-  const selectedTags = useWatch({
-    control: form.control,
-    name: 'tags',
-  }) ?? []
-
-  const imageUrl = useWatch({
-    control: form.control,
-    name: 'image_url',
-  })
+  const selectedTags = useWatch({ control: form.control, name: 'tags' }) ?? []
+  const imageUrl = useWatch({ control: form.control, name: 'image_url' })
 
   const toggleTag = (tag: string) => {
     const currentTags = form.getValues('tags') ?? []
@@ -97,56 +87,67 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
     form.setValue('tags', newTags)
   }
 
-  const handleSubmit = form.handleSubmit((values) => {
-    onSubmit(values)
-  })
+  const handleSubmit = form.handleSubmit((values) => onSubmit(values))
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto p-0">
+        <DialogHeader className="px-6 pt-6 pb-0">
+          <DialogTitle className="text-lg">
             {initialValues?.title ? 'Edit Task' : 'Create New Task'}
           </DialogTitle>
           <DialogDescription>
-            {initialValues?.title ? 'Update task details below' : 'Fill in the details to create a new task'}
+            {initialValues?.title ? 'Update task details below.' : 'Fill in the details to create a new task.'}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
+        <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-5 mt-4">
+          {/* Image Upload - prominent position */}
+          <div>
+            <ImageUpload
+              value={imageUrl}
+              onChange={(value) => form.setValue('image_url', value ?? '', { shouldValidate: true })}
+              disabled={isLoading}
+            />
+            {form.formState.errors.image_url && (
+              <p className="text-xs text-destructive mt-1.5">{form.formState.errors.image_url.message}</p>
+            )}
+          </div>
+
+          {/* Title */}
+          <div className="space-y-1.5">
+            <Label htmlFor="title" className="text-xs font-medium">Title *</Label>
             <Input
               id="title"
-              placeholder="Enter task title"
+              placeholder="What needs to be done?"
+              className="rounded-xl"
               {...form.register('title')}
             />
             {form.formState.errors.title && (
-              <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
+              <p className="text-xs text-destructive">{form.formState.errors.title.message}</p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+          {/* Description */}
+          <div className="space-y-1.5">
+            <Label htmlFor="description" className="text-xs font-medium">Description</Label>
             <Textarea
               id="description"
-              placeholder="Enter task description (supports markdown)"
-              className="min-h-[100px]"
+              placeholder="Add details, markdown supported..."
+              className="min-h-[80px] rounded-xl resize-none"
               {...form.register('description')}
             />
-            {form.formState.errors.description && (
-              <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
-            )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
+          {/* Status & Priority */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Status</Label>
               <Select
                 defaultValue={form.getValues('status')}
                 onValueChange={(value) => form.setValue('status', value as TaskStatus)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="rounded-xl">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -157,14 +158,13 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
                 </SelectContent>
               </Select>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Priority</Label>
               <Select
                 defaultValue={form.getValues('priority')}
                 onValueChange={(value) => form.setValue('priority', value as TaskPriority)}
               >
-                <SelectTrigger>
+                <SelectTrigger className="rounded-xl">
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
                 <SelectContent>
@@ -177,54 +177,52 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Tags</Label>
-            <div className="flex flex-wrap gap-2">
-              {availableTags.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant={selectedTags?.includes(tag) ? 'default' : 'outline'}
-                  className="cursor-pointer"
-                  onClick={() => toggleTag(tag)}
-                >
-                  {tag}
-                  {selectedTags?.includes(tag) && (
-                    <X className="w-3 h-3 ml-1" />
-                  )}
-                </Badge>
-              ))}
-              {selectedTags && selectedTags.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  Click tags to add them
-                </p>
-              )}
+          {/* Tags */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium">Tags</Label>
+            <div className="flex flex-wrap gap-1.5">
+              {availableTags.map((tag) => {
+                const isSelected = selectedTags?.includes(tag)
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => toggleTag(tag)}
+                    className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border transition-all duration-150 ${
+                      isSelected
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-transparent text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground'
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3 h-3" />}
+                    {tag}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
-          <div>
-            <ImageUpload
-              value={imageUrl}
-              onChange={(value) => form.setValue('image_url', value ?? '', { shouldValidate: true })}
-              disabled={isLoading}
-            />
-            {form.formState.errors.image_url && (
-              <p className="text-sm text-destructive mt-1">{form.formState.errors.image_url.message}</p>
-            )}
-          </div>
-
-          <DialogFooter>
+          {/* Footer */}
+          <div className="flex justify-end gap-2 pt-2">
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
+              size="sm"
+              className="rounded-xl"
               onClick={() => onOpenChange(false)}
               disabled={isLoading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Saving...' : initialValues?.title ? 'Update Task' : 'Create Task'}
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isLoading}
+              className="rounded-xl bg-linear-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white border-0 shadow-sm shadow-violet-500/20"
+            >
+              {isLoading ? 'Saving...' : initialValues?.title ? 'Save Changes' : 'Create Task'}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

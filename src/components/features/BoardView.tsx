@@ -27,10 +27,10 @@ interface BoardViewProps {
 const COLUMNS: TaskStatus[] = ['todo', 'in_progress', 'code_review', 'done']
 
 const COLUMN_CONFIG = {
-  todo: { title: 'To Do', icon: Circle, color: 'text-slate-500' },
-  in_progress: { title: 'In Progress', icon: Clock, color: 'text-blue-500' },
-  code_review: { title: 'Review', icon: Code2, color: 'text-amber-500' },
-  done: { title: 'Done', icon: CheckCircle2, color: 'text-emerald-500' },
+  todo: { title: 'To Do', icon: Circle, color: 'text-slate-500', dot: 'bg-slate-400' },
+  in_progress: { title: 'In Progress', icon: Clock, color: 'text-blue-500', dot: 'bg-blue-500' },
+  code_review: { title: 'Review', icon: Code2, color: 'text-amber-500', dot: 'bg-amber-500' },
+  done: { title: 'Done', icon: CheckCircle2, color: 'text-emerald-500', dot: 'bg-emerald-500' },
 }
 
 function createEmptyColumns<T>(): Record<TaskStatus, T[]> {
@@ -65,8 +65,8 @@ function DroppableColumn({ id, children }: { id: TaskStatus; children: React.Rea
   return (
     <div
       ref={setNodeRef}
-      className={`space-y-2.5 min-h-[120px] rounded-lg p-0.5 transition-colors ${
-        isOver ? 'bg-primary/5 ring-1 ring-primary/20' : ''
+      className={`space-y-2.5 min-h-[120px] rounded-2xl p-1.5 transition-all duration-200 ${
+        isOver ? 'bg-primary/5 ring-2 ring-primary/20 scale-[1.01]' : ''
       }`}
     >
       {children}
@@ -198,12 +198,12 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
           return (
             <div key={column} className="space-y-3">
               {/* Column Header */}
-              <div className="flex items-center justify-between px-1">
+              <div className="flex items-center justify-between px-2">
                 <div className="flex items-center gap-2">
-                  <Icon className={`w-4 h-4 ${config.color}`} />
-                  <span className="text-sm font-medium">{config.title}</span>
+                  <span className={`w-2 h-2 rounded-full ${config.dot}`} />
+                  <span className="text-sm font-semibold">{config.title}</span>
                 </div>
-                <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full tabular-nums">
+                <span className="text-[11px] text-muted-foreground bg-muted/80 px-2 py-0.5 rounded-full tabular-nums font-medium">
                   {columnTasks.length}
                 </span>
               </div>
@@ -216,8 +216,9 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
                   ))}
                 </SortableContext>
                 {columnTasks.length === 0 && (
-                  <div className="text-center py-10 text-xs text-muted-foreground border border-dashed rounded-xl">
-                    No tasks
+                  <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border border-dashed border-border/60 rounded-2xl">
+                    <Icon className={`w-5 h-5 ${config.color} mb-2 opacity-40`} />
+                    <span className="text-xs">No tasks</span>
                   </div>
                 )}
               </DroppableColumn>
@@ -228,7 +229,7 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
 
       <DragOverlay dropAnimation={{ duration: 250, easing: 'cubic-bezier(0.25, 1, 0.5, 1)' }}>
         {activeTask && (
-          <div className="rotate-2 scale-105 shadow-xl opacity-95">
+          <div className="rotate-2 scale-105 shadow-2xl shadow-black/10 dark:shadow-black/30 opacity-95">
             <TaskCard task={activeTask} />
           </div>
         )}
