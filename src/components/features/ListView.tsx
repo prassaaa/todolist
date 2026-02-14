@@ -3,6 +3,7 @@ import { StatusBadge } from './StatusBadge'
 import { PriorityIcon } from './PriorityIcon'
 import { Badge } from '@/components/ui/badge'
 import { formatDistanceToNow } from 'date-fns'
+import { id as idLocale } from 'date-fns/locale'
 import { MoreVertical, Trash2, Archive, Image, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -27,11 +28,11 @@ function ListHeader() {
   return (
     <div className="flex items-center gap-4 px-4 py-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60 border-b border-border/40">
       <div className="w-11 shrink-0" /> {/* thumbnail space */}
-      <div className="flex-1 min-w-0">Task</div>
-      <div className="hidden md:block w-28 shrink-0">Tags</div>
+      <div className="flex-1 min-w-0">Tugas</div>
+      <div className="hidden md:block w-28 shrink-0">Label</div>
       <div className="hidden sm:block w-24 shrink-0">Status</div>
-      <div className="hidden sm:block w-16 shrink-0">Priority</div>
-      <div className="hidden lg:block w-28 shrink-0 text-right">Created</div>
+      <div className="hidden sm:block w-16 shrink-0">Prioritas</div>
+      <div className="hidden lg:block w-28 shrink-0 text-right">Dibuat</div>
       <div className="w-7 shrink-0" /> {/* action space */}
     </div>
   )
@@ -99,7 +100,7 @@ function TaskRow({ task, onTaskClick, onArchive, onDelete }: {
       {/* Date */}
       <div className="hidden lg:flex items-center gap-1 text-[11px] text-muted-foreground/50 w-28 shrink-0 justify-end">
         <Clock className="w-3 h-3" />
-        <span>{formatDistanceToNow(new Date(task.created_at), { addSuffix: true })}</span>
+        <span>{formatDistanceToNow(new Date(task.created_at), { addSuffix: true, locale: idLocale })}</span>
       </div>
 
       {/* Actions */}
@@ -113,14 +114,14 @@ function TaskRow({ task, onTaskClick, onArchive, onDelete }: {
           <DropdownMenuContent align="end" className="rounded-xl">
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onArchive?.(task.id) }} className="rounded-lg">
               <Archive className="mr-2 h-3.5 w-3.5" />
-              Archive
+              Arsipkan
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={(e) => { e.stopPropagation(); onDelete?.(task.id) }}
               className="text-destructive rounded-lg"
             >
               <Trash2 className="mr-2 h-3.5 w-3.5" />
-              Delete
+              Hapus
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -164,9 +165,9 @@ export function ListView({ tasks, isLoading, onTaskClick, onArchive, onDelete }:
         <div className="w-16 h-16 rounded-3xl bg-muted/60 flex items-center justify-center mb-5 ring-1 ring-border/30">
           <Image className="w-7 h-7 text-muted-foreground/40" />
         </div>
-        <h3 className="text-base font-semibold mb-1">No tasks yet</h3>
+        <h3 className="text-base font-semibold mb-1">Belum ada tugas</h3>
         <p className="text-sm text-muted-foreground/70 max-w-xs">
-          Create your first task to get started.
+          Buat tugas pertamamu untuk memulai.
         </p>
       </div>
     )

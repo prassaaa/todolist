@@ -2,6 +2,7 @@ import { StatusBadge } from "./StatusBadge"
 import { PriorityIcon } from "./PriorityIcon"
 import type { Task } from "@/types/task"
 import { formatDistanceToNow } from "date-fns"
+import { id as idLocale } from "date-fns/locale"
 import { Clock, Tag, X, ZoomIn } from "lucide-react"
 import { useState, useEffect, useCallback } from "react"
 import { getTagColor } from "@/lib/tag-colors"
@@ -97,7 +98,7 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
             <span className="flex-1" />
             <span className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
               <Clock className="w-2.5 h-2.5" />
-              {formatDistanceToNow(new Date(task.created_at), { addSuffix: true })}
+              {formatDistanceToNow(new Date(task.created_at), { addSuffix: true, locale: idLocale })}
             </span>
           </div>
         </div>

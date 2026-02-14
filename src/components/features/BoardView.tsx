@@ -27,10 +27,10 @@ interface BoardViewProps {
 const COLUMNS: TaskStatus[] = ['todo', 'in_progress', 'code_review', 'done']
 
 const COLUMN_CONFIG = {
-  todo: { title: 'To Do', icon: Circle, color: 'text-slate-500', dot: 'bg-slate-400' },
-  in_progress: { title: 'In Progress', icon: Clock, color: 'text-blue-500', dot: 'bg-blue-500' },
-  code_review: { title: 'Review', icon: Code2, color: 'text-amber-500', dot: 'bg-amber-500' },
-  done: { title: 'Done', icon: CheckCircle2, color: 'text-emerald-500', dot: 'bg-emerald-500' },
+  todo: { title: 'Belum Mulai', icon: Circle, color: 'text-slate-500', dot: 'bg-slate-400' },
+  in_progress: { title: 'Dikerjakan', icon: Clock, color: 'text-blue-500', dot: 'bg-blue-500' },
+  code_review: { title: 'Ditinjau', icon: Code2, color: 'text-amber-500', dot: 'bg-amber-500' },
+  done: { title: 'Selesai', icon: CheckCircle2, color: 'text-emerald-500', dot: 'bg-emerald-500' },
 }
 
 function createEmptyColumns<T>(): Record<TaskStatus, T[]> {
@@ -218,7 +218,7 @@ export function BoardView({ tasks, isLoading, onTaskClick, onDropTask }: BoardVi
                 {columnTasks.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border border-dashed border-border/60 rounded-2xl">
                     <Icon className={`w-5 h-5 ${config.color} mb-2 opacity-40`} />
-                    <span className="text-xs">No tasks</span>
+                    <span className="text-xs">Tidak ada tugas</span>
                   </div>
                 )}
               </DroppableColumn>

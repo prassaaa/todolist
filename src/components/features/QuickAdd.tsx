@@ -30,7 +30,7 @@ export function QuickAdd({ onAdd, isLoading }: QuickAddProps) {
       </div>
       <input
         type="text"
-        placeholder="Quick add task..."
+        placeholder="Tambah tugas cepat..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         disabled={isLoading}

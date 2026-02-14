@@ -6,22 +6,22 @@ interface PriorityIconProps {
 
 const config: Record<TaskPriority, { label: string; bgColor: string; textColor: string }> = {
   low: {
-    label: "Low",
+    label: "Rendah",
     bgColor: "bg-slate-100 dark:bg-slate-800/50",
     textColor: "text-slate-500 dark:text-slate-400",
   },
   medium: {
-    label: "Med",
+    label: "Sedang",
     bgColor: "bg-blue-50 dark:bg-blue-950/50",
     textColor: "text-blue-500 dark:text-blue-400",
   },
   high: {
-    label: "High",
+    label: "Tinggi",
     bgColor: "bg-orange-50 dark:bg-orange-950/50",
     textColor: "text-orange-500 dark:text-orange-400",
   },
   critical: {
-    label: "Critical",
+    label: "Kritis",
     bgColor: "bg-red-50 dark:bg-red-950/50",
     textColor: "text-red-500 dark:text-red-400",
   },

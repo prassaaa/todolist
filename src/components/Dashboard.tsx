@@ -81,11 +81,11 @@ export function Dashboard() {
   }
 
   const statItems = [
-    { key: 'todo', label: 'To Do', value: stats?.todo ?? 0, icon: Circle, bg: 'bg-slate-100 dark:bg-slate-800/60', color: 'text-slate-500', ring: 'ring-slate-200 dark:ring-slate-700' },
-    { key: 'inProgress', label: 'In Progress', value: stats?.inProgress ?? 0, icon: Clock, bg: 'bg-blue-50 dark:bg-blue-950/40', color: 'text-blue-500', ring: 'ring-blue-100 dark:ring-blue-900' },
-    { key: 'codeReview', label: 'Review', value: stats?.codeReview ?? 0, icon: Code2, bg: 'bg-amber-50 dark:bg-amber-950/40', color: 'text-amber-500', ring: 'ring-amber-100 dark:ring-amber-900' },
-    { key: 'done', label: 'Done', value: stats?.done ?? 0, icon: CheckCircle2, bg: 'bg-emerald-50 dark:bg-emerald-950/40', color: 'text-emerald-500', ring: 'ring-emerald-100 dark:ring-emerald-900' },
-    { key: 'archived', label: 'Archived', value: stats?.archived ?? 0, icon: Archive, bg: 'bg-rose-50 dark:bg-rose-950/40', color: 'text-rose-400', ring: 'ring-rose-100 dark:ring-rose-900' },
+    { key: 'todo', label: 'Belum Mulai', value: stats?.todo ?? 0, icon: Circle, bg: 'bg-slate-100 dark:bg-slate-800/60', color: 'text-slate-500', ring: 'ring-slate-200 dark:ring-slate-700' },
+    { key: 'inProgress', label: 'Dikerjakan', value: stats?.inProgress ?? 0, icon: Clock, bg: 'bg-blue-50 dark:bg-blue-950/40', color: 'text-blue-500', ring: 'ring-blue-100 dark:ring-blue-900' },
+    { key: 'codeReview', label: 'Ditinjau', value: stats?.codeReview ?? 0, icon: Code2, bg: 'bg-amber-50 dark:bg-amber-950/40', color: 'text-amber-500', ring: 'ring-amber-100 dark:ring-amber-900' },
+    { key: 'done', label: 'Selesai', value: stats?.done ?? 0, icon: CheckCircle2, bg: 'bg-emerald-50 dark:bg-emerald-950/40', color: 'text-emerald-500', ring: 'ring-emerald-100 dark:ring-emerald-900' },
+    { key: 'archived', label: 'Diarsipkan', value: stats?.archived ?? 0, icon: Archive, bg: 'bg-rose-50 dark:bg-rose-950/40', color: 'text-rose-400', ring: 'ring-rose-100 dark:ring-rose-900' },
   ]
 
   return (
@@ -133,11 +133,11 @@ export function Dashboard() {
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="todo">To Do</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="code_review">Code Review</SelectItem>
-              <SelectItem value="done">Done</SelectItem>
+              <SelectItem value="all">Semua Status</SelectItem>
+              <SelectItem value="todo">Belum Mulai</SelectItem>
+              <SelectItem value="in_progress">Dikerjakan</SelectItem>
+              <SelectItem value="code_review">Ditinjau</SelectItem>
+              <SelectItem value="done">Selesai</SelectItem>
             </SelectContent>
           </Select>
 
@@ -146,11 +146,11 @@ export function Dashboard() {
               <SelectValue placeholder="Priority" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Priority</SelectItem>
-              <SelectItem value="low">Low</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="critical">Critical</SelectItem>
+              <SelectItem value="all">Semua Prioritas</SelectItem>
+              <SelectItem value="low">Rendah</SelectItem>
+              <SelectItem value="medium">Sedang</SelectItem>
+              <SelectItem value="high">Tinggi</SelectItem>
+              <SelectItem value="critical">Kritis</SelectItem>
             </SelectContent>
           </Select>
 
@@ -184,7 +184,7 @@ export function Dashboard() {
             className="h-9 rounded-xl bg-linear-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 shadow-md shadow-violet-500/20 text-white border-0"
           >
             <Plus className="h-4 w-4 mr-1" />
-            New Task
+            Tugas Baru
           </Button>
         </div>
       </div>
@@ -223,17 +223,17 @@ export function Dashboard() {
             <div className="mx-auto w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-2">
               <AlertTriangle className="w-6 h-6 text-destructive" />
             </div>
-            <DialogTitle className="text-center">Delete Task</DialogTitle>
+            <DialogTitle className="text-center">Hapus Tugas</DialogTitle>
             <DialogDescription className="text-center">
-              This action cannot be undone. The task will be permanently deleted.
+              Tindakan ini tidak bisa dibatalkan. Tugas akan dihapus secara permanen.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-row gap-2 sm:justify-center">
             <Button variant="outline" size="sm" className="flex-1 rounded-xl" onClick={() => setDeleteConfirmId(null)}>
-              Cancel
+              Batal
             </Button>
             <Button variant="destructive" size="sm" className="flex-1 rounded-xl" onClick={confirmDelete} disabled={deleteMutation.isPending}>
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              {deleteMutation.isPending ? 'Menghapus...' : 'Hapus'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -17,11 +17,11 @@ export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
 
   const processFile = useCallback((file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file')
+      alert('Pilih file gambar')
       return
     }
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be less than 5MB')
+      alert('Ukuran gambar maksimal 5MB')
       return
     }
     const reader = new FileReader()
@@ -53,13 +53,13 @@ export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
 
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs font-medium">Image *</Label>
+      <Label className="text-xs font-medium">Gambar *</Label>
 
       {preview ? (
         <div className="relative group rounded-2xl overflow-hidden ring-1 ring-border/50">
           <img
             src={preview}
-            alt="Preview"
+            alt="Pratinjau"
             className="w-full h-44 object-cover"
           />
           {/* Overlay on hover */}
@@ -100,10 +100,10 @@ export function ImageUpload({ value, onChange, disabled }: ImageUploadProps) {
             )}
           </div>
           <p className="text-sm font-medium text-foreground/70 mb-0.5">
-            {isDragOver ? 'Drop image here' : 'Upload an image'}
+            {isDragOver ? 'Lepas gambar di sini' : 'Unggah gambar'}
           </p>
           <p className="text-[11px] text-muted-foreground/60">
-            Drag & drop or click to browse. PNG, JPG, WebP up to 5MB
+            Seret & lepas atau klik untuk memilih. PNG, JPG, WebP maks 5MB
           </p>
         </button>
       )}

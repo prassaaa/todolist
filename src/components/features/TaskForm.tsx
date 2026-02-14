@@ -25,12 +25,12 @@ import { ImageUpload } from './ImageUpload'
 import type { TaskStatus, TaskPriority } from '@/types/task'
 
 const taskFormSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
-  description: z.string().max(2000, 'Description too long').optional(),
+  title: z.string().min(1, 'Judul wajib diisi').max(200, 'Judul terlalu panjang'),
+  description: z.string().max(2000, 'Deskripsi terlalu panjang').optional(),
   status: z.enum(['todo', 'in_progress', 'code_review', 'done'] as const),
   priority: z.enum(['low', 'medium', 'high', 'critical'] as const),
   tags: z.array(z.string()).default([]),
-  image_url: z.string().min(1, 'Image is required'),
+  image_url: z.string().min(1, 'Gambar wajib diunggah'),
 })
 
 type TaskFormInput = z.input<typeof taskFormSchema>
@@ -94,10 +94,10 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
       <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto p-0">
         <DialogHeader className="px-6 pt-6 pb-0">
           <DialogTitle className="text-lg">
-            {initialValues?.title ? 'Edit Task' : 'Create New Task'}
+            {initialValues?.title ? 'Edit Tugas' : 'Buat Tugas Baru'}
           </DialogTitle>
           <DialogDescription>
-            {initialValues?.title ? 'Update task details below.' : 'Fill in the details to create a new task.'}
+            {initialValues?.title ? 'Perbarui detail tugas di bawah.' : 'Isi detail untuk membuat tugas baru.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -116,10 +116,10 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
 
           {/* Title */}
           <div className="space-y-1.5">
-            <Label htmlFor="title" className="text-xs font-medium">Title *</Label>
+            <Label htmlFor="title" className="text-xs font-medium">Judul *</Label>
             <Input
               id="title"
-              placeholder="What needs to be done?"
+              placeholder="Apa yang perlu dikerjakan?"
               className="rounded-xl"
               {...form.register('title')}
             />
@@ -130,10 +130,10 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
 
           {/* Description */}
           <div className="space-y-1.5">
-            <Label htmlFor="description" className="text-xs font-medium">Description</Label>
+            <Label htmlFor="description" className="text-xs font-medium">Deskripsi</Label>
             <Textarea
               id="description"
-              placeholder="Add details, markdown supported..."
+              placeholder="Tambahkan detail..."
               className="min-h-[80px] rounded-xl resize-none"
               {...form.register('description')}
             />
@@ -148,30 +148,30 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
                 onValueChange={(value) => form.setValue('status', value as TaskStatus)}
               >
                 <SelectTrigger className="rounded-xl">
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder="Pilih status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todo">To Do</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="code_review">Code Review</SelectItem>
-                  <SelectItem value="done">Done</SelectItem>
+                  <SelectItem value="todo">Belum Mulai</SelectItem>
+                  <SelectItem value="in_progress">Dikerjakan</SelectItem>
+                  <SelectItem value="code_review">Ditinjau</SelectItem>
+                  <SelectItem value="done">Selesai</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Priority</Label>
+              <Label className="text-xs font-medium">Prioritas</Label>
               <Select
                 defaultValue={form.getValues('priority')}
                 onValueChange={(value) => form.setValue('priority', value as TaskPriority)}
               >
                 <SelectTrigger className="rounded-xl">
-                  <SelectValue placeholder="Select priority" />
+                  <SelectValue placeholder="Pilih prioritas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="low">Rendah</SelectItem>
+                  <SelectItem value="medium">Sedang</SelectItem>
+                  <SelectItem value="high">Tinggi</SelectItem>
+                  <SelectItem value="critical">Kritis</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -179,7 +179,7 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
 
           {/* Tags */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Tags</Label>
+            <Label className="text-xs font-medium">Label</Label>
             <div className="flex flex-wrap gap-1.5">
               {availableTags.map((tag) => {
                 const isSelected = selectedTags?.includes(tag)
@@ -212,7 +212,7 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
               onClick={() => onOpenChange(false)}
               disabled={isLoading}
             >
-              Cancel
+              Batal
             </Button>
             <Button
               type="submit"
@@ -220,7 +220,7 @@ export function TaskForm({ open, onOpenChange, onSubmit, initialValues, isLoadin
               disabled={isLoading}
               className="rounded-xl bg-linear-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white border-0 shadow-sm shadow-violet-500/20"
             >
-              {isLoading ? 'Saving...' : initialValues?.title ? 'Save Changes' : 'Create Task'}
+              {isLoading ? 'Menyimpan...' : initialValues?.title ? 'Simpan Perubahan' : 'Buat Tugas'}
             </Button>
           </div>
         </form>
